@@ -26,10 +26,13 @@ func main() {
 	parser := proto.NewParser(reader)
 	definition, _ := parser.Parse()
 
-	// walk the proto file and fill messages and rpcFunctions
+	// walk the proto file and fill messages
 	proto.Walk(
 		definition,
-		proto.WithMessage(addMessage),
+		proto.WithMessage(addMessage))
+
+	// walk the proto file and fill rpcFunctions
+	proto.Walk(definition,
 		proto.WithRPC(addRPC))
 }
 

@@ -6,7 +6,7 @@ import (
 )
 
 var messages map[string]*proto.Message
-var rpcFunctions []*proto.RPC
+var rpcFunctions []*linkedRPC
 
 func main() {
 	// initialize the messages
@@ -38,7 +38,11 @@ func addMessage(m *proto.Message) {
 	messages[m.Name] = m
 }
 
-// apply function to be applied on every proto.RPC to store it to rpcFunctions slice
+// apply function to be applied on every proto.RPC to generate a linkedRPC and store it in rpcFunctions
 func addRPC(rpc *proto.RPC) {
-	rpcFunctions = append(rpcFunctions, rpc)
+	rpcFunctions = append(rpcFunctions, &linkedRPC{
+		rpcFunction: rpc,
+		responseMsg: messages[rpc.ReturnsType],
+		requestMsg:  messages[rpc.RequestType],
+	})
 }

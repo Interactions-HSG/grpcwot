@@ -6,7 +6,7 @@ import (
 )
 
 var messages map[string]*proto.Message
-var rpcFunctions []*proto.RPC
+var rpcFunctions []*linkedRPC
 
 func main() {
 	// initialize the messages
@@ -26,10 +26,13 @@ func main() {
 	parser := proto.NewParser(reader)
 	definition, _ := parser.Parse()
 
-	// walk the proto file and fill messages and rpcFunctions
+	// walk the proto file and fill messages
 	proto.Walk(
 		definition,
-		proto.WithMessage(addMessage),
+		proto.WithMessage(addMessage))
+
+	// walk the proto file and fill rpcFunctions
+	proto.Walk(definition,
 		proto.WithRPC(addRPC))
 }
 
@@ -38,7 +41,11 @@ func addMessage(m *proto.Message) {
 	messages[m.Name] = m
 }
 
-// apply function to be applied on every proto.RPC to store it to rpcFunctions slice
+// apply function to be applied on every proto.RPC to generate a linkedRPC and store it in rpcFunctions
 func addRPC(rpc *proto.RPC) {
-	rpcFunctions = append(rpcFunctions, rpc)
+	rpcFunctions = append(rpcFunctions, &linkedRPC{
+		rpcFunction: rpc,
+		responseMsg: messages[rpc.ReturnsType],
+		requestMsg:  messages[rpc.RequestType],
+	})
 }

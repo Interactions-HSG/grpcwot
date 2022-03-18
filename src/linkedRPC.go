@@ -17,8 +17,8 @@ type linkedRPC struct {
 @param blueprintValue: is the value that maybe should be searched in the linkedRPC,
 	for example something like <rpcFunction.Comment.long-title>
 @param rpc: is the linkedRPC as starting point for the search
-This function returns a value looked up in the linkedRPC based on the given path if one was provided
-	or returns the original value if not
+This function returns a value looked up in the linkedRPC if the provided blueprintValue encodes a path to a specific value
+	if not the original blueprintValue is returned
 */
 func getValueForDefinedPathInRpcFunction(blueprintValue string, rpc linkedRPC) string {
 	// checks if this is a value that has to be looked up

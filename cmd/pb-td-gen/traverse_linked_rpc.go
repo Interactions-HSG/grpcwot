@@ -6,6 +6,7 @@ import (
 	"strings"
 )
 
+// AllowedClasses is ...
 type AllowedClasses string
 
 // defines classes on which it is allowed to get fields
@@ -25,12 +26,10 @@ var allowedAccess = map[AllowedClasses][]string{
 	ProtoMessage: {"Position", "Comment", "Name" /*, "IsExtend", "Elements", "Parent"*/},
 }
 
-/**
-@param object: the object is the actual node where the recursive function is working on in this iteration
-@param blueprintValueParts: the slice where the path is stored to access a value
-@param actPartsPos: the actual position in this slice
-This function runs recursively through the nodes to extract a value for the given blueprintValueParts
-*/
+// traverseCallParts runs recursively through the nodes to extract a value for the given blueprintValueParts
+// @param object: the object is the actual node where the recursive function is working on in this iteration
+// @param blueprintValueParts: the slice where the path is stored to access a value
+// @param actPartsPos: the actual position in this slice
 func traverseCallParts(object reflect.Value, blueprintValueParts []string, actPartsPos int) string {
 	// Checks if the desired value is in the comments and calls getCommentLineContent to extract it
 	if AllowedClasses(object.Type().String()) == ProtoComment &&
@@ -83,9 +82,7 @@ func traverseCallParts(object reflect.Value, blueprintValueParts []string, actPa
 	}
 }
 
-/*
-Small helper function to determine if a slice of strings contains a specific string
-*/
+// contains is a small helper function to determine if a slice of strings contains a specific string
 func contains(arr []string, s string) bool {
 	for _, v := range arr {
 		if s == v {

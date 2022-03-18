@@ -1,9 +1,10 @@
 package main
 
 import (
-	"github.com/emicklei/proto"
 	"reflect"
 	"strings"
+
+	"github.com/emicklei/proto"
 )
 
 // struct to store the linkage between rpcFunction and its *proto.Message s
@@ -13,13 +14,11 @@ type linkedRPC struct {
 	requestMsg  *proto.Message
 }
 
-/**
-@param blueprintValue: is the value that maybe should be searched in the linkedRPC,
-	for example something like <rpcFunction.Comment.long-title>
-@param rpc: is the linkedRPC as starting point for the search
-This function returns a value looked up in the linkedRPC if the provided blueprintValue encodes a path to a specific value
-	if not the original blueprintValue is returned
-*/
+// getValueForDefinedPathInRpcFunction returns a value looked up in the linkedRPC if the provided blueprintValue encodes a path to a specific value
+// 	if not the original blueprintValue is returned
+// @param blueprintValue: is the value that maybe should be searched in the linkedRPC,
+// 	for example something like <rpcFunction.Comment.long-title>
+// @param rpc: is the linkedRPC as starting point for the search
 func getValueForDefinedPathInRpcFunction(blueprintValue string, rpc linkedRPC) string {
 	// checks if this is a value that has to be looked up
 	if strings.HasPrefix(blueprintValue, "<") &&

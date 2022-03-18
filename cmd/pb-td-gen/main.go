@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/emicklei/proto"
 	"os"
+
+	"github.com/emicklei/proto"
 )
 
 var messages map[string]*proto.Message

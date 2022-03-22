@@ -1,11 +1,8 @@
-module grpcwot
+module github.com/Interactions-HSG/grpcwot
 
 go 1.17
 
-replace github.com/Interactions-HSG/grpcwot => ./
-
 require (
-	github.com/Interactions-HSG/grpcwot v0.0.0-00010101000000-000000000000
 	github.com/emicklei/proto v1.9.2
 	github.com/linksmart/thing-directory v1.0.0-beta.22
 	github.com/urfave/cli/v2 v2.4.0

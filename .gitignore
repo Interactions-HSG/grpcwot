@@ -6,10 +6,13 @@
 *.dylib
 
 # Test binary, built with `go test -c`
+*.proto
 *.test
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
+*.json
+*.jsonld
 
 # Dependency directories (remove the comment below to include it)
 # vendor/

@@ -5,7 +5,7 @@ go 1.17
 require (
 	github.com/emicklei/proto v1.9.2
 	github.com/linksmart/thing-directory v1.0.0-beta.22
-	github.com/urfave/cli/v2 v2.4.0
+	github.com/urfave/cli/v2 v2.5.0
 )
 
 require (

@@ -1,0 +1,26 @@
+{
+  "GetTest1": {
+    "AffClass": "property",
+    "Name": "Test1"
+  },
+  "SetTest1": {
+    "AffClass": "property",
+    "Name": "Test1"
+  },
+  "GetTest2ToAction": {
+    "AffClass": "property",
+    "Name": "Test2ToAction"
+  },
+  "SetTest2ToAction": {
+    "AffClass": "action",
+    "Name": "SetTest2ToAction"
+  },
+  "ActionTest1": {
+    "AffClass": "action",
+    "Name": "ActionTest1"
+  },
+  "EventTest1": {
+    "AffClass": "event",
+    "Name": "EventTest1"
+  }
+}

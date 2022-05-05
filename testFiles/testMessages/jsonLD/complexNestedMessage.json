@@ -1,0 +1,177 @@
+{
+  "BasicTest": {
+    "type": "object",
+    "properties": {
+      "it1": {
+        "type": "object",
+        "properties": {
+          "t2": {
+            "type": "integer"
+          },
+          "t3": {
+            "type": "integer"
+          }
+        }
+      },
+      "it2": {
+        "type": "object",
+        "properties": {
+          "advancesInner": {
+            "type": "object",
+            "properties": {
+              "t1": {
+                "type": "integer"
+              }
+            }
+          },
+          "t8": {
+            "type": "integer"
+          }
+        }
+      },
+      "t0": {
+        "type": "integer"
+      }
+    }
+  },
+  "OuterTest1": {
+    "type": "object",
+    "properties": {
+      "innerTest1": {
+        "type": "object",
+        "properties": {
+          "t1": {
+            "type": "integer"
+          }
+        }
+      },
+      "innerTest2": {
+        "type": "object",
+        "properties": {
+          "t2": {
+            "type": "integer"
+          },
+          "t3": {
+            "type": "integer"
+          }
+        }
+      },
+      "t4": {
+        "type": "integer"
+      }
+    }
+  },
+  "OuterTest1.InnerTest1": {
+    "type": "object",
+    "properties": {
+      "t1": {
+        "type": "integer"
+      }
+    }
+  },
+  "OuterTest1.InnerTest2": {
+    "type": "object",
+    "properties": {
+      "t2": {
+        "type": "integer"
+      },
+      "t3": {
+        "type": "integer"
+      }
+    }
+  },
+  "OuterTest2": {
+    "type": "object",
+    "properties": {
+      "innerTest1": {
+        "type": "object",
+        "properties": {
+          "innerInnerTest": {
+            "type": "object",
+            "properties": {
+              "advancesInner": {
+                "type": "object",
+                "properties": {
+                  "t1": {
+                    "type": "integer"
+                  }
+                }
+              },
+              "t8": {
+                "type": "integer"
+              }
+            }
+          },
+          "t5": {
+            "type": "integer"
+          },
+          "t6": {
+            "type": "integer"
+          }
+        }
+      },
+      "innerTest2": {
+        "type": "object",
+        "properties": {
+          "t7": {
+            "type": "integer"
+          }
+        }
+      },
+      "t8": {
+        "type": "integer"
+      }
+    }
+  },
+  "OuterTest2.InnerTest1": {
+    "type": "object",
+    "properties": {
+      "innerInnerTest": {
+        "type": "object",
+        "properties": {
+          "advancesInner": {
+            "type": "object",
+            "properties": {
+              "t1": {
+                "type": "integer"
+              }
+            }
+          },
+          "t8": {
+            "type": "integer"
+          }
+        }
+      },
+      "t5": {
+        "type": "integer"
+      },
+      "t6": {
+        "type": "integer"
+      }
+    }
+  },
+  "OuterTest2.InnerTest1.InnerInnerTest": {
+    "type": "object",
+    "properties": {
+      "advancesInner": {
+        "type": "object",
+        "properties": {
+          "t1": {
+            "type": "integer"
+          }
+        }
+      },
+      "t8": {
+        "type": "integer"
+      }
+    }
+  },
+  "OuterTest2.InnerTest2": {
+    "type": "object",
+    "properties": {
+      "t7": {
+        "type": "integer"
+      }
+    }
+  }
+}

@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+message Test {
+  int32 test2 = 1;
+  LinkedTest linkedTest = 2;
+}
+
+message LinkedTest {
+  int32 test1 = 1;
+}

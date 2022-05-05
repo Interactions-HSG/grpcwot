@@ -154,11 +154,7 @@ func (b *builder) HandleRPCWithConfig(r *proto.RPC) {
 	}
 	switch c.AffClass {
 	case "property":
-		if _, ok := b.af.props[c.Name]; ok {
-			b.af.props[c.Name] = append(b.af.props[c.Name], r)
-		} else {
-			b.af.props[c.Name] = []*proto.RPC{r}
-		}
+		b.af.props[c.Name] = append(b.af.props[c.Name], r)
 	case "action":
 		b.af.actions[c.Name] = r
 	case "event":
@@ -171,7 +167,7 @@ func (b *builder) HandleRPCWithConfig(r *proto.RPC) {
 func (b *builder) HandleMessage(m *proto.Message) {
 	mN := m.Name
 	p := m.Parent
-	for true {
+	for {
 		v, ok := p.(*proto.Message)
 		if !ok {
 			break
@@ -227,7 +223,7 @@ func (b *builder) fieldToDataSchemaHelper(f *proto.Field, pm string) string {
 }
 
 func (b *builder) oneofToDataSchema(oo *proto.Oneof, pm string) []wot.DataSchema {
-	oof := []wot.DataSchema{}
+	var oof []wot.DataSchema
 	for _, v := range oo.Elements {
 		oof = append(oof, b.fieldToDataSchema(v.(*proto.OneOfField).Field, pm))
 	}
@@ -258,7 +254,7 @@ func containsFalse(a []bool) bool {
 // constructMessagesNested tries to combine and build up nested trees by filling in the referenced messages into the
 // parent messages
 func (b *builder) constructMessagesNested() {
-	a := make([]bool, len(b.lm), len(b.lm))
+	a := make([]bool, len(b.lm))
 	for containsFalse(a) {
 		for k, v := range b.lm {
 			if a[k] || isParentMessageOf(v.n, b.lm) {
@@ -351,7 +347,7 @@ func (b *builder) saveEvent(n string, r *proto.RPC) {
 // readInput is a helper function to read in input from the user
 func readInput(reader *bufio.Reader, s, k string, v []*proto.RPC) string {
 	allowedInputs := []string{"", "a", "p", "e"}
-	for true {
+	for {
 		if len(v) == 1 {
 			fmt.Printf("%s '%s' with RPC function '%s'\n", s, k, v[0].Name)
 		} else {
@@ -364,7 +360,6 @@ func readInput(reader *bufio.Reader, s, k string, v []*proto.RPC) string {
 			return t
 		}
 	}
-	return ""
 }
 
 // checkAndSaveInteractionAffordances asks the user for validation of the made classification decisions and saves the

@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+service TEST {
+  rpc GetTest1 (Empty) returns (GetTestMessage);
+  rpc SetTest1 (GetTestMessage) returns (GetTestMessage);
+
+  rpc GetTest2 (Empty) returns (GetTestMessage);
+  rpc SetTest2 (GetTestMessage) returns (Empty);
+
+  rpc GetTest3 (Empty) returns (GetTestMessage);
+
+  rpc SetTest4 (GetTestMessage) returns (Empty);
+
+  rpc SetTest5 (GetTestMessage) returns (GetTestMessage);
+
+  rpc ActionTest1(ActionTestMessage) returns (ActionTestMessage);
+  rpc ActionTest2(ActionTestMessage) returns (Empty);
+  rpc ActionTest3(Empty) returns (Empty);
+
+  rpc EventTest (Empty) returns (EventTestMessage);
+}
+
+message Empty {
+}
+
+message GetTestMessage {
+  int32 t = 1;
+}
+
+message ActionTestMessage {
+  int32 t = 1;
+}
+
+
+message EventTestMessage {
+  int32 t = 1;
+}

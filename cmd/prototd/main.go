@@ -48,7 +48,7 @@ func main() {
 		Action: func(c *cli.Context) error {
 			protoFile := c.Args().Get(0)
 			if !strings.HasSuffix(protoFile, ".proto") {
-				return errors.New("The input file must be a .proto file")
+				return errors.New("the input file must be a .proto file")
 			} else if _, err := os.Stat(protoFile); errors.Is(err, os.ErrNotExist) {
 				return err
 			}

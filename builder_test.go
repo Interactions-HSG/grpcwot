@@ -1,13 +1,67 @@
 package grpcwot
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/emicklei/proto"
+	"github.com/linksmart/thing-directory/wot"
 	"io/ioutil"
 	"os"
+	"testing"
 )
 
 type unmarshalExpected func([]byte) error
+
+// Helper functions for message testing
+
+func MessageParserTestHelper(t *testing.T, f string, dir string) {
+	a := parseProtoFileToBuilder(dir + "/protos/" + f + ".proto").ds
+	e := map[string]*wot.DataSchema{}
+	unmarshalExpectedFile(dir+"/json/"+f+".json", func(b []byte) error {
+		return json.Unmarshal(b, &e)
+	})
+	checkDataSchemaMapEquality(t, e, a)
+}
+
+func checkDataSchemaMapEquality(t *testing.T, e, a map[string]*wot.DataSchema) {
+	if len(e) != len(a) {
+		t.Errorf("The number of messages differ for expected and actual. "+
+			"Number of expected is %d, number of actual is %d", len(e), len(a))
+	}
+	for k, v := range e {
+		v2, ok := a[k]
+		if !ok {
+			t.Errorf("The actual message map does not contain the expected key %s", k)
+		} else {
+			checkDataSchemaEquality(t, *v, *v2)
+		}
+	}
+}
+
+func checkDataSchemaEquality(t *testing.T, e, a wot.DataSchema) {
+	if e.DataType != a.DataType {
+		t.Errorf("Datatypes of expected and actual do not match. "+
+			"Expected DataType was %s and actual DataType is %s", e.DataType, a.DataType)
+	}
+	if e.DataType == "object" {
+		checkDataSchemaPropertiesMapEquality(t, e.ObjectSchema.Properties, a.ObjectSchema.Properties)
+	}
+}
+
+func checkDataSchemaPropertiesMapEquality(t *testing.T, e, a map[string]wot.DataSchema) {
+	if len(e) != len(a) {
+		t.Errorf("The length of expected and actual property map differ. "+
+			"Length of expected is %d, length of actual is %d", len(e), len(a))
+	}
+	for k, v := range e {
+		v2, ok := a[k]
+		if !ok {
+			t.Errorf("The actual property map does not contain the expected key %s", k)
+		} else {
+			checkDataSchemaEquality(t, v, v2)
+		}
+	}
+}
 
 // General helper functions
 
@@ -47,4 +101,17 @@ func unmarshalExpectedFile(expectedFile string, fn unmarshalExpected) {
 	if err != nil {
 		return
 	}
+}
+
+// readByteValueFromJsonFile reads in a json file into byteValue
+func readByteValueFromJsonFile(file string) ([]byte, error) {
+	jsonFile, err := os.Open(file)
+	if err != nil {
+		return nil, err
+	}
+	defer func(jsonFile *os.File) {
+		jsonFile.Close()
+	}(jsonFile)
+
+	return ioutil.ReadAll(jsonFile)
 }

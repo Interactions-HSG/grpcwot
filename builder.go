@@ -81,25 +81,24 @@ func (b *builder) HandleMessage(m *proto.Message) {
 	}
 }
 
+// fieldToDataSchema converts the given proto's message field into a WoT DataScheme
+// cf. https://www.w3.org/TR/wot-thing-description/#dataschema
 func fieldToDataSchema(f *proto.Field) wot.DataSchema {
-	return wot.DataSchema{DataType: determineJsonTypeForField(f)}
-}
-
-// determineJsonTypeForField is a helper function to convert datatypes used in proto files into data types used in
-// json format.
-func determineJsonTypeForField(f *proto.Field) string {
+	var fieldType string
 	switch f.Type {
 	case "double", "float":
-		return "number"
+		fieldType = "number"
 	case "int32", "int64", "uint32", "uint64", "sint32", "sint64", "fixed32", "fixed64", "sfixed32", "sfixed64":
-		return "integer"
+		fieldType = "integer"
 	case "bool":
-		return "boolean"
+		fieldType = "boolean"
 	case "string", "bytes":
-		return "string"
+		fieldType = "string"
 	default:
-		return "object"
+		fieldType = "object"
 	}
+
+	return wot.DataSchema{DataType: fieldType}
 }
 
 func oneofToDataSchema(oo *proto.Oneof) []wot.DataSchema {

@@ -12,6 +12,17 @@ import (
 
 type unmarshalExpected func([]byte) error
 
+// Message parsing tests - scalar field types
+// Proto files as input files are provided under testFiles/testScalarFieldTypes/proto
+// The desired structure of data schemas are provided under testFiles/testScalarFieldTypes/jsonLD
+
+// The input file scalarFieldTypeMessage provides only one message with fields of scalar value types
+// Every scalar value type listed for proto3 (https://developers.google.com/protocol-buffers/docs/proto3#scalar) is included with one field
+// The test expects, that all scalar value types are converted into the corresponding json value type according to the table provided above
+func TestMessageParserStandardMessage(t *testing.T) {
+	MessageParserTestHelper(t, "scalarFieldTypeMessage", "testFiles/testScalarFieldTypes")
+}
+
 // Helper functions for message testing
 
 func MessageParserTestHelper(t *testing.T, f string, dir string) {

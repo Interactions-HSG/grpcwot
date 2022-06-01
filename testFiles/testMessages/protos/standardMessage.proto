@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+message Test {
+  // number
+  double testDouble = 1;
+  float testFloat = 2;
+  // integer
+  int32 testInt32 = 3;
+  int64 testInt64 = 4;
+  uint32 testUInt32 = 5;
+  uint64 testUInt64 = 6;
+  sint32 testSInt32 = 7;
+  sint64 testSInt64 = 8;
+  fixed32 testFixed32 = 9;
+  fixed64 testFixed64 = 10;
+  sfixed32 testSFixed32 = 11;
+  sfixed64 testSFixed64 = 12;
+  // bool
+  bool testBool = 13;
+  // string
+  string testString = 14;
+  bytes testBytes = 15;
+}

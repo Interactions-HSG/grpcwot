@@ -1,0 +1,34 @@
+{
+  "Empty": {
+  },
+  "Test1": {
+    "type": "object",
+    "properties": {
+      "t1": {
+        "type": "integer"
+      }
+    }
+  },
+  "Test2": {
+    "type": "object",
+    "properties": {
+      "t2": {
+        "type": "integer"
+      },
+      "t3": {
+        "type": "integer"
+      },
+      "t4": {
+        "type": "number"
+      }
+    }
+  },
+  "Test3": {
+    "type": "object",
+    "properties": {
+      "t1": {
+        "type": "integer"
+      }
+    }
+  }
+}

@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+message BasicTest {
+  OuterTest1.InnerTest2 it1 = 1;
+  OuterTest2.InnerTest1.InnerInnerTest it2 = 2;
+  int32 t0 = 3;
+}
+
+message OuterTest1 {
+  message InnerTest1 {
+    int32 t1 = 1;
+  }
+  message InnerTest2 {
+    int32 t2 = 1;
+    int32 t3 = 2;
+  }
+  InnerTest1 innerTest1 = 1;
+  InnerTest2 innerTest2 = 2;
+  int32 t4 = 3;
+}
+
+message OuterTest2 {
+  message InnerTest1 {
+    message InnerInnerTest {
+      OuterTest1.InnerTest1 advancesInner = 1;
+      int32 t8 = 2;
+    }
+    int32 t5 = 1;
+    int32 t6 = 2;
+    InnerInnerTest innerInnerTest = 3;
+  }
+  message InnerTest2 {
+    int32 t7 = 1;
+  }
+  InnerTest1 innerTest1 = 1;
+  int32 t8 = 2;
+  InnerTest2 innerTest2 = 3;
+}
+
+message M1 {
+  message M2 {
+  }
+  message M3 {
+    message M4 {
+      M2 t = 1;
+    }
+  }
+}
+message M2 {
+}

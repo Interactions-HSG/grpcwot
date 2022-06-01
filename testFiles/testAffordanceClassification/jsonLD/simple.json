@@ -1,0 +1,27 @@
+{
+  "props": {
+    "Test1": [
+      "GetTest1", "SetTest1"
+    ],
+    "Test2": [
+      "GetTest2", "SetTest2"
+    ],
+    "Test3": [
+      "GetTest3"
+    ],
+    "Test4": [
+      "SetTest4"
+    ],
+    "Test5": [
+      "SetTest5"
+    ]
+  },
+  "actions": {
+    "ActionTest1": "ActionTest1",
+    "ActionTest2": "ActionTest2",
+    "ActionTest3": "ActionTest3"
+  },
+  "events": {
+    "EventTest": "EventTest"
+  }
+}

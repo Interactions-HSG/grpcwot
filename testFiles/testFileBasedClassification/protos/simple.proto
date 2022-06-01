@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+service XAPI {
+  rpc GetTest1 (Empty) returns (Test1);
+  rpc SetTest1 (Test1) returns (Test1);
+
+  rpc GetTest2ToAction (Empty) returns (Test1);
+  rpc SetTest2ToAction (Test1) returns (Test1);
+
+  rpc ActionTest1 (Test1) returns (Test1);
+
+  rpc EventTest1 (Empty) returns (Test1);
+}
+
+message Empty {
+}
+
+message Test1 {
+  int32 t1 = 1;
+  int32 t2 = 2;
+}

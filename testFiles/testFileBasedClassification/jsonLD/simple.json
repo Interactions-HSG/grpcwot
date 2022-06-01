@@ -1,0 +1,17 @@
+{
+  "props": {
+    "Test1": [
+      "GetTest1", "SetTest1"
+    ],
+    "Test2ToAction": [
+      "GetTest2ToAction"
+    ]
+  },
+  "actions": {
+    "SetTest2ToAction": "SetTest2ToAction",
+    "ActionTest1": "ActionTest1"
+  },
+  "events": {
+    "EventTest1": "EventTest1"
+  }
+}

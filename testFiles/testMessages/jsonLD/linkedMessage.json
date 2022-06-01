@@ -1,0 +1,26 @@
+{
+    "Test": {
+        "type": "object",
+        "properties": {
+            "test2": {
+                "type": "integer"
+            },
+            "linkedTest": {
+                "type": "object",
+                "properties": {
+                    "test1": {
+                        "type": "integer"
+                    }
+                }
+            }
+        }
+    },
+    "LinkedTest": {
+        "type": "object",
+        "properties": {
+            "test1": {
+                "type": "integer"
+            }
+        }
+    }
+}

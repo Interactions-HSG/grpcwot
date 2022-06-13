@@ -81,17 +81,24 @@ func (b *builder) HandleMessage(m *proto.Message) {
 	}
 }
 
+// fieldToDataSchema converts the given proto's message field into a WoT DataScheme
+// cf. https://www.w3.org/TR/wot-thing-description/#dataschema
 func fieldToDataSchema(f *proto.Field) wot.DataSchema {
+	var fieldType string
 	switch f.Type {
+	case "double", "float":
+		fieldType = "number"
+	case "int32", "int64", "uint32", "uint64", "sint32", "sint64", "fixed32", "fixed64", "sfixed32", "sfixed64":
+		fieldType = "integer"
 	case "bool":
-		return wot.DataSchema{DataType: "boolean"}
-	case "float":
-		return wot.DataSchema{DataType: "number"}
-	case "int32":
-		return wot.DataSchema{DataType: "integer"}
+		fieldType = "boolean"
+	case "string", "bytes":
+		fieldType = "string"
 	default:
-		return wot.DataSchema{DataType: "string"}
+		fieldType = "object"
 	}
+
+	return wot.DataSchema{DataType: fieldType}
 }
 
 func oneofToDataSchema(oo *proto.Oneof) []wot.DataSchema {

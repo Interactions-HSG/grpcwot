@@ -57,11 +57,20 @@ func (b *builder) HandleRPC(r *proto.RPC) {
 	b.td.Actions[r.Name] = affordance
 }
 
+func getFullMessageName(m *proto.Message) string {
+	if v, ok := m.Parent.(*proto.Message); ok {
+		return getFullMessageName(v) + "." + m.Name
+	} else {
+		return m.Name
+	}
+}
+
 // HandleMessage build a DataSchema: https://www.w3.org/TR/wot-thing-description/#dataschema
 // from a Message in the protobuf definition
 func (b *builder) HandleMessage(m *proto.Message) {
-	if _, ok := b.ds[m.Name]; !ok {
-		b.ds[m.Name] = &wot.DataSchema{
+	fullMessageName := getFullMessageName(m)
+	if _, ok := b.ds[fullMessageName]; !ok {
+		b.ds[fullMessageName] = &wot.DataSchema{
 			DataType: "object",
 			ObjectSchema: &wot.ObjectSchema{
 				Properties: map[string]wot.DataSchema{},
@@ -71,11 +80,11 @@ func (b *builder) HandleMessage(m *proto.Message) {
 	for _, v := range m.Elements {
 		switch protofmt.NameOfVisitee(v) {
 		case "NormalField":
-			b.ds[m.Name].ObjectSchema.Properties[v.(*proto.NormalField).Field.Name] =
+			b.ds[fullMessageName].ObjectSchema.Properties[v.(*proto.NormalField).Field.Name] =
 				fieldToDataSchema(v.(*proto.NormalField).Field)
 		case "Comment":
 		case "Oneof":
-			b.ds[m.Name].ObjectSchema.Properties[v.(*proto.Oneof).Name] =
+			b.ds[fullMessageName].ObjectSchema.Properties[v.(*proto.Oneof).Name] =
 				wot.DataSchema{OneOf: oneofToDataSchema(v.(*proto.Oneof))}
 		}
 	}

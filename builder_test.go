@@ -84,3 +84,37 @@ func TestScalarFields(t *testing.T) {
 		}
 	}
 }
+
+var messageNameDeterminationTest = []struct {
+	in  *proto.Message
+	out string
+}{
+	{
+		&proto.Message{Name: "Test"},
+		"Test",
+	},
+	{
+		&proto.Message{Name: "Test", Parent: &proto.Message{Name: "ParentTest"}},
+		"ParentTest.Test",
+	},
+	{
+		&proto.Message{Name: "Test",
+			Parent: &proto.Message{Name: "ParentTest",
+				Parent: &proto.Message{Name: "ParentParentTest"}}},
+		"ParentParentTest.ParentTest.Test",
+	},
+	{
+		&proto.Message{Name: "Test",
+			Parent: &proto.Service{Name: "Service"}},
+		"Test",
+	},
+}
+
+func TestGetFullMessageName(t *testing.T) {
+	for _, tt := range messageNameDeterminationTest {
+		result := getFullMessageName(tt.in)
+		if result != tt.out {
+			t.Errorf("getFullMessageName(%v) => \n%v, want \n%v", tt.in, result, tt.out)
+		}
+	}
+}

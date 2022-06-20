@@ -2,19 +2,28 @@ package grpcwot
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/Interactions-HSG/grpcwot/pkg/protofmt"
 	"github.com/emicklei/proto"
 	"github.com/linksmart/thing-directory/wot"
 )
 
+type refMesTuple struct {
+	pm string // Parent message where the field of type message is included
+	t  string // Type of the field == name of the referenced message
+	n  string // Name of the field
+}
+
 type builder struct {
 	td   wot.ThingDescription
 	ds   map[string]*wot.DataSchema
 	ip   string
 	port int
+	lm   []refMesTuple
 }
 
 func newBuilder(ip string, port int) *builder {
@@ -57,6 +66,7 @@ func (b *builder) HandleRPC(r *proto.RPC) {
 	b.td.Actions[r.Name] = affordance
 }
 
+// getFullMessageName returns the complete Message name from the root level to the actual message
 func getFullMessageName(m *proto.Message) string {
 	if v, ok := m.Parent.(*proto.Message); ok {
 		return getFullMessageName(v) + "." + m.Name
@@ -81,18 +91,18 @@ func (b *builder) HandleMessage(m *proto.Message) {
 		switch protofmt.NameOfVisitee(v) {
 		case "NormalField":
 			b.ds[fullMessageName].ObjectSchema.Properties[v.(*proto.NormalField).Field.Name] =
-				fieldToDataSchema(v.(*proto.NormalField).Field)
+				b.fieldToDataSchema(v.(*proto.NormalField).Field, fullMessageName)
 		case "Comment":
 		case "Oneof":
 			b.ds[fullMessageName].ObjectSchema.Properties[v.(*proto.Oneof).Name] =
-				wot.DataSchema{OneOf: oneofToDataSchema(v.(*proto.Oneof))}
+				wot.DataSchema{OneOf: b.oneofToDataSchema(v.(*proto.Oneof), fullMessageName)}
 		}
 	}
 }
 
 // fieldToDataSchema converts the given proto's message field into a WoT DataScheme
 // cf. https://www.w3.org/TR/wot-thing-description/#dataschema
-func fieldToDataSchema(f *proto.Field) wot.DataSchema {
+func (b *builder) fieldToDataSchema(f *proto.Field, messageName string) wot.DataSchema {
 	var fieldType string
 	switch f.Type {
 	case "double", "float":
@@ -105,17 +115,65 @@ func fieldToDataSchema(f *proto.Field) wot.DataSchema {
 		fieldType = "string"
 	default:
 		fieldType = "object"
+		b.lm = append(b.lm, refMesTuple{pm: messageName, t: f.Type, n: f.Name})
 	}
-
 	return wot.DataSchema{DataType: fieldType}
 }
 
-func oneofToDataSchema(oo *proto.Oneof) []wot.DataSchema {
+func (b *builder) oneofToDataSchema(oo *proto.Oneof, messageName string) []wot.DataSchema {
 	oof := []wot.DataSchema{}
 	for _, v := range oo.Elements {
-		oof = append(oof, fieldToDataSchema(v.(*proto.OneOfField).Field))
+		oof = append(oof, b.fieldToDataSchema(v.(*proto.OneOfField).Field, messageName))
 	}
 	return oof
+}
+
+// Determines if the parent Message is included in another message intrusion
+func (b *builder) isParentMessage(elem refMesTuple) bool {
+	parts := strings.Split(elem.pm, ".")
+	for k := 0; k <= len(parts); k++ {
+		s := strings.Join(parts[k:], ".") + "." + elem.t
+		if k == len(parts) {
+			s = elem.t
+		}
+		if _, ok := b.ds[s]; ok {
+			for _, v := range b.lm {
+				if v.pm == s {
+					return true
+				}
+			}
+			return false
+		}
+	}
+	return false
+}
+
+// Resolves all message references stored in lm
+func (b *builder) constructMessagesNested() error {
+	var left []refMesTuple
+	for len(b.lm) != 0 {
+		for _, v := range b.lm {
+			if b.isParentMessage(v) {
+				left = append(left, v)
+				continue
+			}
+			s := append(strings.Split(v.pm, "."), v.t)
+			e := true
+			for i := 0; i < len(s); i++ {
+				if _, ok := b.ds[strings.Join(s[i:], ".")]; ok {
+					b.ds[v.pm].ObjectSchema.Properties[v.n] = *b.ds[strings.Join(s[i:], ".")]
+					e = false
+					break
+				}
+			}
+			if e {
+				return errors.New("No place found to inject mapping for type " + v.t + " in message " + v.pm + " at field " + v.n)
+			}
+		}
+		b.lm = left
+		left = []refMesTuple{}
+	}
+	return nil
 }
 
 // GenerateTDfromProtoBuf parses `protoFile` to generate `tdFile`

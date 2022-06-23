@@ -121,6 +121,16 @@ func TestGetFullMessageName(t *testing.T) {
 	}
 }
 
+func errorCheck(t *testing.T, exp error, act error) {
+	if act == nil && exp != nil {
+		t.Errorf("Expected error %v,\n but no error was raised", exp.Error())
+	} else if act != nil && exp == nil {
+		t.Errorf("Expected no error, but the follwing error was raised:\n%v", act.Error())
+	} else if act != nil && exp != nil && act.Error() != exp.Error() {
+		t.Errorf("Expected error message: %v\nbut got: %v", exp.Error(), act.Error())
+	}
+}
+
 var resolveSingleReferenceTest = []struct {
 	in     builder
 	inElem refMesTuple
@@ -298,13 +308,7 @@ func TestResolveSingleReference(t *testing.T) {
 	for _, tt := range resolveSingleReferenceTest {
 		result, err := tt.in.resolveSingleReference(tt.inElem)
 
-		if err == nil && tt.err != nil {
-			t.Errorf("Expected error %v,\n but no error was raised", tt.err)
-		} else if err != nil && tt.err == nil {
-			t.Errorf("Expected no error, but the follwing error was raised:\n%v", err)
-		} else if err != nil && tt.err != nil && err.Error() != tt.err.Error() {
-			t.Errorf("Expected error message: %v\nbut got: %v", tt.err.Error(), err.Error())
-		}
+		errorCheck(t, tt.err, err)
 
 		if result != tt.out {
 			t.Errorf("Expected %v,\nbut got %v", tt.out, result)
@@ -510,13 +514,7 @@ func TestConstructMessageNested(t *testing.T) {
 	for _, tt := range constructMessageNested {
 		err := tt.in.constructMessagesNested()
 
-		if err != nil {
-			if tt.err == nil {
-				t.Errorf("constructMessageNested() failed unexpected with error " + err.Error())
-			} else if tt.err.Error() != err.Error() {
-				t.Errorf("Error message does not message. \n Expected error %v\n but got error %v", tt.err.Error(), err.Error())
-			}
-		}
+		errorCheck(t, tt.err, err)
 
 		for _, out := range tt.out {
 			result := out.getResultDataSchema(tt.in.ds)

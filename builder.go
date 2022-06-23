@@ -143,18 +143,18 @@ func (b *builder) resolveSingleReference(elem refMesTuple) (string, error) {
 		" in message " + elem.pm)
 }
 
-// Determines if the parent Message is included in another message intrusion
-func (b *builder) isParentMessage(elem refMesTuple) bool {
-	referencedMessage, err := b.resolveSingleReference(elem)
-	if err != nil {
-		return false
-	}
-	for _, v := range b.lm {
-		if v.pm == referencedMessage {
-			return true
+// Resolves all references in lm by calling resolveSingleReference on them
+// Sets the t (type) property of each refMesTuple to the full message name of the referenced message
+func (b *builder) resolveAllReferences() error {
+	for k, v := range b.lm {
+		res, err := b.resolveSingleReference(v)
+		if err != nil {
+			return err
 		}
+		v.t = res
+		b.lm[k] = v
 	}
-	return false
+	return nil
 }
 
 // containsCircle determines if the message references hold a circle and would lead to infinite injection
@@ -189,37 +189,20 @@ func containsCircle(lm []refMesTuple) error {
 	return nil
 }
 
-// Resolves all message references stored in lm
+// Extend the data schemas with references to other data schemas representing the message references
 func (b *builder) constructMessagesNested() error {
-	for k, v := range b.lm {
-		res, err := b.resolveSingleReference(v)
-		if err != nil {
-			return err
-		}
-		v.t = res
-		b.lm[k] = v
-	}
-
-	err := containsCircle(b.lm)
+	err := b.resolveAllReferences()
 	if err != nil {
 		return err
 	}
 
-	var left []refMesTuple
-	for len(b.lm) != 0 {
-		for _, v := range b.lm {
-			if b.isParentMessage(v) {
-				left = append(left, v)
-				continue
-			}
-			referencedMessage, err := b.resolveSingleReference(v)
-			if err != nil {
-				return err
-			}
-			b.ds[v.pm].ObjectSchema.Properties[v.n] = *b.ds[referencedMessage]
-		}
-		b.lm = left
-		left = []refMesTuple{}
+	err = containsCircle(b.lm)
+	if err != nil {
+		return err
+	}
+
+	for _, v := range b.lm {
+		b.ds[v.pm].ObjectSchema.Properties[v.n] = *b.ds[v.t]
 	}
 	return nil
 }

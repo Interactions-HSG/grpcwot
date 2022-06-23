@@ -121,9 +121,11 @@ func TestGetFullMessageName(t *testing.T) {
 	}
 }
 
-var isParentMessageTest = []struct {
-	in          builder
-	isParentOut []bool
+var resolveSingleReferenceTest = []struct {
+	in     builder
+	inElem refMesTuple
+	out    string
+	err    error
 }{
 	{
 		// message ParentMessage {
@@ -135,37 +137,10 @@ var isParentMessageTest = []struct {
 				"ParentMessage":     {},
 				"ReferencedMessage": {},
 			},
-			lm: []refMesTuple{
-				{pm: "ParentMessage", t: "ReferencedMessage", n: "testField"},
-			},
 		},
-		[]bool{
-			false,
-		},
-	},
-	{
-		// message ParentMessage2 {
-		//   ParentMessage testField = 1;
-		// }
-		// message ParentMessage {
-		//   ReferencedMessage testField = 1;
-		// }
-		// message ReferencedMessage {}
-		builder{
-			ds: map[string]*wot.DataSchema{
-				"ParentMessage":     {},
-				"ParentMessage2":    {},
-				"ReferencedMessage": {},
-			},
-			lm: []refMesTuple{
-				{pm: "ParentMessage", t: "ReferencedMessage", n: "testField"},
-				{pm: "ParentMessage2", t: "ParentMessage", n: "testField"},
-			},
-		},
-		[]bool{
-			false,
-			true,
-		},
+		refMesTuple{pm: "ParentMessage", t: "ReferencedMessage", n: "testField"},
+		"ReferencedMessage",
+		nil,
 	},
 	{
 		// message Message1 {
@@ -181,15 +156,29 @@ var isParentMessageTest = []struct {
 				"Message1.Message2":          {},
 				"Message1.Message2.Message3": {},
 			},
-			lm: []refMesTuple{
-				{pm: "Message1", t: "Message2", n: "testField"},
-				{pm: "Message1.Message2", t: "Message3", n: "testField"},
+		},
+		refMesTuple{pm: "Message1", t: "Message2", n: "testField"},
+		"Message1.Message2",
+		nil,
+	},
+	{
+		// message Message1 {
+		//   message Message2 {
+		//     message Message3 {}
+		//     Message3 testField = 1;
+		//   }
+		//   Message2 testField = 1;
+		// }
+		builder{
+			ds: map[string]*wot.DataSchema{
+				"Message1":                   {},
+				"Message1.Message2":          {},
+				"Message1.Message2.Message3": {},
 			},
 		},
-		[]bool{
-			true,
-			false,
-		},
+		refMesTuple{pm: "Message1.Message2", t: "Message3", n: "testField"},
+		"Message1.Message2.Message3",
+		nil,
 	},
 	{
 		// message Message1 {
@@ -212,89 +201,7 @@ var isParentMessageTest = []struct {
 				"Message1.Message2.Message3.Message2": {},
 				"Message5":                            {},
 			},
-			lm: []refMesTuple{
-				{pm: "Message1", t: "Message2.Message3", n: "testField"},
-				{pm: "Message1.Message2.Message3", t: "Message2.Message3.Message2", n: "testField"},
-				{pm: "Message1.Message2", t: "Message3.Message2", n: "testField"},
-				{pm: "Message1.Message2.Message3", t: "Message5", n: "testField1"},
-			},
 		},
-		[]bool{
-			true,
-			false,
-			false,
-			false,
-		},
-	},
-}
-
-func TestIsParentMessage(t *testing.T) {
-	for _, tt := range isParentMessageTest {
-		for k, v := range tt.in.lm {
-			result := tt.in.isParentMessage(v)
-			if result != tt.isParentOut[k] {
-				t.Errorf("isParentMessage(%v) \n with lm %v => \n%v, want \n%v", v, tt.in.lm, result, tt.isParentOut[k])
-			}
-		}
-	}
-}
-
-var resolveSingleReferenceTest = []struct {
-	in     builder
-	inElem refMesTuple
-	out    string
-	err    error
-}{
-	{
-		// message ParentMessage {
-		//   ReferencedMessage testField = 1;
-		// }
-		// message ReferencedMessage {}
-		isParentMessageTest[0].in,
-		refMesTuple{pm: "ParentMessage", t: "ReferencedMessage", n: "testField"},
-		"ReferencedMessage",
-		nil,
-	},
-	{
-		// message Message1 {
-		//   message Message2 {
-		//     message Message3 {}
-		//     Message3 testField = 1;
-		//   }
-		//   Message2 testField = 1;
-		// }
-		isParentMessageTest[2].in,
-		refMesTuple{pm: "Message1", t: "Message2", n: "testField"},
-		"Message1.Message2",
-		nil,
-	},
-	{
-		// message Message1 {
-		//   message Message2 {
-		//     message Message3 {}
-		//     Message3 testField = 1;
-		//   }
-		//   Message2 testField = 1;
-		// }
-		isParentMessageTest[2].in,
-		refMesTuple{pm: "Message1.Message2", t: "Message3", n: "testField"},
-		"Message1.Message2.Message3",
-		nil,
-	},
-	{
-		// message Message1 {
-		//   message Message2 {
-		//     message Message3 {
-		//       message Message2 {}
-		//       Message2.Message3.Message2 testField = 1;
-		//       Message5 testField1 = 2;
-		//     }
-		//     Message3.Message2 testField = 1;
-		//   }
-		//   Message2.Message3 testField = 1;
-		// }
-		// message Message5 {}
-		isParentMessageTest[3].in,
 		refMesTuple{pm: "Message1.Message2.Message3", t: "Message5", n: "testField"},
 		"Message5",
 		nil,
@@ -312,7 +219,15 @@ var resolveSingleReferenceTest = []struct {
 		//   Message2.Message3 testField = 1;
 		// }
 		// message Message5 {}
-		isParentMessageTest[3].in,
+		builder{
+			ds: map[string]*wot.DataSchema{
+				"Message1":                            {},
+				"Message1.Message2":                   {},
+				"Message1.Message2.Message3":          {},
+				"Message1.Message2.Message3.Message2": {},
+				"Message5":                            {},
+			},
+		},
 		refMesTuple{pm: "Message1.Message2.Message3", t: "Message2.Message3.Message2", n: "testField"},
 		"Message1.Message2.Message3.Message2",
 		nil,
@@ -330,7 +245,15 @@ var resolveSingleReferenceTest = []struct {
 		//   Message2.Message3 testField = 1;
 		// }
 		// message Message5 {}
-		isParentMessageTest[3].in,
+		builder{
+			ds: map[string]*wot.DataSchema{
+				"Message1":                            {},
+				"Message1.Message2":                   {},
+				"Message1.Message2.Message3":          {},
+				"Message1.Message2.Message3.Message2": {},
+				"Message5":                            {},
+			},
+		},
 		refMesTuple{pm: "Message1", t: "Message2.Message3", n: "testField"},
 		"Message1.Message2.Message3",
 		nil,

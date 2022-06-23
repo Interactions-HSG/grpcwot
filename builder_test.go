@@ -1,6 +1,7 @@
 package grpcwot
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/emicklei/proto"
@@ -238,6 +239,156 @@ func TestIsParentMessage(t *testing.T) {
 	}
 }
 
+var resolveSingleReferenceTest = []struct {
+	in     builder
+	inElem refMesTuple
+	out    string
+	err    error
+}{
+	{
+		// message ParentMessage {
+		//   ReferencedMessage testField = 1;
+		// }
+		// message ReferencedMessage {}
+		isParentMessageTest[0].in,
+		refMesTuple{pm: "ParentMessage", t: "ReferencedMessage", n: "testField"},
+		"ReferencedMessage",
+		nil,
+	},
+	{
+		// message Message1 {
+		//   message Message2 {
+		//     message Message3 {}
+		//     Message3 testField = 1;
+		//   }
+		//   Message2 testField = 1;
+		// }
+		isParentMessageTest[2].in,
+		refMesTuple{pm: "Message1", t: "Message2", n: "testField"},
+		"Message1.Message2",
+		nil,
+	},
+	{
+		// message Message1 {
+		//   message Message2 {
+		//     message Message3 {}
+		//     Message3 testField = 1;
+		//   }
+		//   Message2 testField = 1;
+		// }
+		isParentMessageTest[2].in,
+		refMesTuple{pm: "Message1.Message2", t: "Message3", n: "testField"},
+		"Message1.Message2.Message3",
+		nil,
+	},
+	{
+		// message Message1 {
+		//   message Message2 {
+		//     message Message3 {
+		//       message Message2 {}
+		//       Message2.Message3.Message2 testField = 1;
+		//       Message5 testField1 = 2;
+		//     }
+		//     Message3.Message2 testField = 1;
+		//   }
+		//   Message2.Message3 testField = 1;
+		// }
+		// message Message5 {}
+		isParentMessageTest[3].in,
+		refMesTuple{pm: "Message1.Message2.Message3", t: "Message5", n: "testField"},
+		"Message5",
+		nil,
+	},
+	{
+		// message Message1 {
+		//   message Message2 {
+		//     message Message3 {
+		//       message Message2 {}
+		//       Message2.Message3.Message2 testField = 1;
+		//       Message5 testField1 = 2;
+		//     }
+		//     Message3.Message2 testField = 1;
+		//   }
+		//   Message2.Message3 testField = 1;
+		// }
+		// message Message5 {}
+		isParentMessageTest[3].in,
+		refMesTuple{pm: "Message1.Message2.Message3", t: "Message2.Message3.Message2", n: "testField"},
+		"Message1.Message2.Message3.Message2",
+		nil,
+	},
+	{
+		// message Message1 {
+		//   message Message2 {
+		//     message Message3 {
+		//       message Message2 {}
+		//       Message2.Message3.Message2 testField = 1;
+		//       Message5 testField1 = 2;
+		//     }
+		//     Message3.Message2 testField = 1;
+		//   }
+		//   Message2.Message3 testField = 1;
+		// }
+		// message Message5 {}
+		isParentMessageTest[3].in,
+		refMesTuple{pm: "Message1", t: "Message2.Message3", n: "testField"},
+		"Message1.Message2.Message3",
+		nil,
+	},
+	{
+		// message Message1 {
+		//   Message2 testField = 1;
+		// }
+		builder{
+			ds: map[string]*wot.DataSchema{
+				"Message1": {},
+			},
+		},
+		refMesTuple{pm: "Message1", t: "Message2", n: "testField"},
+		"",
+		errors.New("No corresponding message found for type reference Message2 in message Message1"),
+	},
+	{
+		// message Message1 {
+		//   message Message2 {
+		//     message Message3 {}
+		//   }
+		//   message Message4 {
+		//     Message3 testField = 1;
+		//   }
+		// }
+		builder{
+			ds: map[string]*wot.DataSchema{
+				"Message1":                   {},
+				"Message1.Message2":          {},
+				"Message1.Message2.Message3": {},
+				"Message1.Message4":          {},
+			},
+		},
+		refMesTuple{pm: "Message1.Message4", t: "Message3", n: "testField"},
+		"",
+		errors.New("No corresponding message found for type reference Message3 in message Message1.Message4"),
+	},
+}
+
+func TestResolveSingleReference(t *testing.T) {
+	for _, tt := range resolveSingleReferenceTest {
+		result, err := tt.in.resolveSingleReference(tt.inElem)
+
+		if err == nil && tt.err != nil {
+			t.Errorf("Expected error %v,\n but no error was raised", tt.err)
+		} else if err != nil && tt.err == nil {
+			t.Errorf("Expected no error, but the follwing error was raised:\n%v", err)
+		} else if err != nil && tt.err != nil && err.Error() != tt.err.Error() {
+			t.Errorf("Expected error message: %v\nbut got: %v", tt.err.Error(), err.Error())
+		}
+
+		if result != tt.out {
+			t.Errorf("Expected %v,\nbut got %v", tt.out, result)
+		}
+	}
+}
+
 type getDataSchemaFunc func(schema map[string]*wot.DataSchema) wot.DataSchema
 
 func getDataSchema(dsInsertMessage string, dsInsertFields []string) getDataSchemaFunc {
@@ -394,7 +545,7 @@ func TestConstructMessageNested(t *testing.T) {
 }
 
 var constructMessageNestedError = []builder{
-	/*{
+	{
 		ds: map[string]*wot.DataSchema{
 			"Message1": createInitialMessageDataSchemaOneProperty("testField"),
 			"Message2": createInitialMessageDataSchemaOneProperty("testField"),
@@ -403,7 +554,7 @@ var constructMessageNestedError = []builder{
 			{pm: "Message1", t: "Message2", n: "testField"},
 			{pm: "Message2", t: "Message1", n: "testField"},
 		},
-	},*/
+	},
 	{
 		ds: map[string]*wot.DataSchema{
 			"Message1": createInitialMessageDataSchemaOneProperty("testField"),

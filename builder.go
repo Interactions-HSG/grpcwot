@@ -128,28 +128,83 @@ func (b *builder) oneofToDataSchema(oo *proto.Oneof, messageName string) []wot.D
 	return oof
 }
 
-// Determines if the parent Message is included in another message intrusion
-func (b *builder) isParentMessage(elem refMesTuple) bool {
+func (b *builder) resolveSingleReference(elem refMesTuple) (string, error) {
 	parts := strings.Split(elem.pm, ".")
-	for k := 0; k <= len(parts); k++ {
-		s := strings.Join(parts[k:], ".") + "." + elem.t
-		if k == len(parts) {
+	for k := len(parts); k >= 0; k-- {
+		s := strings.Join(parts[:k], ".") + "." + elem.t
+		if k == 0 {
 			s = elem.t
 		}
 		if _, ok := b.ds[s]; ok {
-			for _, v := range b.lm {
-				if v.pm == s {
-					return true
-				}
-			}
-			return false
+			return s, nil
+		}
+	}
+	return "", errors.New("No corresponding message found for type reference " + elem.t +
+		" in message " + elem.pm)
+}
+
+// Determines if the parent Message is included in another message intrusion
+func (b *builder) isParentMessage(elem refMesTuple) bool {
+	referencedMessage, err := b.resolveSingleReference(elem)
+	if err != nil {
+		return false
+	}
+	for _, v := range b.lm {
+		if v.pm == referencedMessage {
+			return true
 		}
 	}
 	return false
 }
 
+// containsCircle determines if the message references hold a circle and would lead to infinite injection
+// For the search algorithm DFS would be an alternative with a better worst case performance
+// but the structure of lm would have to be modified and for proto file's messages the average use case does not draw
+// on long paths through the graph (the strengths of DFS)
+func containsCircle(lm []refMesTuple) error {
+	ended := make([]bool, len(lm))
+	count := len(lm)
+	last := count
+	for count != 0 {
+	out:
+		for k, v := range lm {
+			if ended[k] {
+				continue
+			}
+			for k2, v2 := range lm {
+				if ended[k2] {
+					continue
+				}
+				if v.t == v2.pm {
+					continue out
+				}
+			}
+			ended[k] = true
+			count--
+		}
+		if last == count {
+			return errors.New("proto file contained circle reference in the Messages")
+		}
+	}
+	return nil
+}
+
 // Resolves all message references stored in lm
 func (b *builder) constructMessagesNested() error {
+	for k, v := range b.lm {
+		res, err := b.resolveSingleReference(v)
+		if err != nil {
+			return err
+		}
+		v.t = res
+		b.lm[k] = v
+	}
+
+	err := containsCircle(b.lm)
+	if err != nil {
+		return err
+	}
+
 	var left []refMesTuple
 	for len(b.lm) != 0 {
 		for _, v := range b.lm {
@@ -157,18 +212,11 @@ func (b *builder) constructMessagesNested() error {
 				left = append(left, v)
 				continue
 			}
-			s := append(strings.Split(v.pm, "."), v.t)
-			e := true
-			for i := 0; i < len(s); i++ {
-				if _, ok := b.ds[strings.Join(s[i:], ".")]; ok {
-					b.ds[v.pm].ObjectSchema.Properties[v.n] = *b.ds[strings.Join(s[i:], ".")]
-					e = false
-					break
-				}
+			referencedMessage, err := b.resolveSingleReference(v)
+			if err != nil {
+				return err
 			}
-			if e {
-				return errors.New("No place found to inject mapping for type " + v.t + " in message " + v.pm + " at field " + v.n)
-			}
+			b.ds[v.pm].ObjectSchema.Properties[v.n] = *b.ds[referencedMessage]
 		}
 		b.lm = left
 		left = []refMesTuple{}

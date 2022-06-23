@@ -363,9 +363,10 @@ func getOutRef(dsInsertMessage string, dsInsertFields []string, dsInsertedMessag
 var constructMessageNested = []struct {
 	in  builder
 	out []outRef
+	err error
 }{
 	{
-		in: builder{
+		builder{
 			ds: map[string]*wot.DataSchema{
 				"Message1": createInitialMessageDataSchemaOneProperty("testField"),
 				"Message2": createInitialMessageDataSchemaEmpty(),
@@ -374,12 +375,13 @@ var constructMessageNested = []struct {
 				{pm: "Message1", t: "Message2", n: "testField"},
 			},
 		},
-		out: []outRef{
+		[]outRef{
 			getOutRef("Message1", []string{"testField"}, "Message2"),
 		},
+		nil,
 	},
 	{
-		in: builder{
+		builder{
 			ds: map[string]*wot.DataSchema{
 				"Message1": createInitialMessageDataSchemaOneProperty("testField"),
 				"Message2": createInitialMessageDataSchemaOneProperty("testField"),
@@ -390,11 +392,12 @@ var constructMessageNested = []struct {
 				{pm: "Message2", t: "Message3", n: "testField"},
 			},
 		},
-		out: []outRef{
+		[]outRef{
 			getOutRef("Message1", []string{"testField"}, "Message2"),
 			getOutRef("Message2", []string{"testField"}, "Message3"),
 			getOutRef("Message1", []string{"testField", "testField"}, "Message3"),
 		},
+		nil,
 	},
 	{
 		//	message Message1 {
@@ -409,7 +412,7 @@ var constructMessageNested = []struct {
 		//	  Message2.Message3 testField = 1;
 		//  }
 		//	message Message5 {}
-		in: builder{
+		builder{
 			ds: map[string]*wot.DataSchema{
 				"Message1":                            createInitialMessageDataSchemaOneProperty("testField"),
 				"Message1.Message2":                   createInitialMessageDataSchemaOneProperty("testField"),
@@ -424,7 +427,7 @@ var constructMessageNested = []struct {
 				{pm: "Message1.Message2.Message3", t: "Message5", n: "testField1"},
 			},
 		},
-		out: []outRef{
+		[]outRef{
 			// Message1 -> Message1.Message2.Message3
 			getOutRef("Message1", []string{"testField"}, "Message1.Message2.Message3"),
 			// Message1.Message2 -> Message1.Message2.Message3.Message2
@@ -444,6 +447,62 @@ var constructMessageNested = []struct {
 			getOutRef("Message1", []string{"testField", "testField", "testField"},
 				"Message1.Message2.Message3.Message2"),
 		},
+		nil,
+	},
+	{
+		builder{
+			ds: map[string]*wot.DataSchema{
+				"Message1": createInitialMessageDataSchemaOneProperty("testField"),
+				"Message2": createInitialMessageDataSchemaOneProperty("testField"),
+			},
+			lm: []refMesTuple{
+				{pm: "Message1", t: "Message2", n: "testField"},
+				{pm: "Message2", t: "Message1", n: "testField"},
+			},
+		},
+		[]outRef{},
+		errors.New("proto file contained circle reference in the Messages"),
+	},
+	{
+		builder{
+			ds: map[string]*wot.DataSchema{
+				"Message1": createInitialMessageDataSchemaOneProperty("testField"),
+			},
+			lm: []refMesTuple{
+				{pm: "Message1", t: "Message2", n: "testField"},
+			},
+		},
+		[]outRef{},
+		errors.New("No corresponding message found for type reference Message2 in message Message1"),
+	},
+	{
+		builder{
+			ds: map[string]*wot.DataSchema{
+				"Message1":                   createInitialMessageDataSchemaOneProperty("testField"),
+				"Message1.Message2":          createInitialMessageDataSchemaEmpty(),
+				"Message1.Message2.Message3": createInitialMessageDataSchemaEmpty(),
+			},
+			lm: []refMesTuple{
+				{pm: "Message1", t: "Message3", n: "testField"},
+			},
+		},
+		[]outRef{},
+		errors.New("No corresponding message found for type reference Message3 in message Message1"),
+	},
+	{
+		builder{
+			ds: map[string]*wot.DataSchema{
+				"Message1":          createInitialMessageDataSchemaOneProperty("testField"),
+				"Message1.Message2": createInitialMessageDataSchemaEmpty(),
+				"Message3":          createInitialMessageDataSchemaEmpty(),
+				"Message3.Message4": createInitialMessageDataSchemaEmpty(),
+			},
+			lm: []refMesTuple{
+				{pm: "Message1", t: "Message4", n: "testField"},
+			},
+		},
+		[]outRef{},
+		errors.New("No corresponding message found for type reference Message4 in message Message1"),
 	},
 }
 
@@ -452,7 +511,11 @@ func TestConstructMessageNested(t *testing.T) {
 		err := tt.in.constructMessagesNested()
 
 		if err != nil {
-			t.Errorf("constructMessageNested() failed unexpected with error " + err.Error())
+			if tt.err == nil {
+				t.Errorf("constructMessageNested() failed unexpected with error " + err.Error())
+			} else if tt.err.Error() != err.Error() {
+				t.Errorf("Error message does not message. \n Expected error %v\n but got error %v", tt.err.Error(), err.Error())
+			}
 		}
 
 		for _, out := range tt.out {
@@ -463,58 +526,6 @@ func TestConstructMessageNested(t *testing.T) {
 				t.Errorf("constructMessageNested() \n Expected inserted DataSchema \n%v \n but got DataSchema \n%v",
 					expected, result)
 			}
-		}
-	}
-}
-
-var constructMessageNestedError = []builder{
-	{
-		ds: map[string]*wot.DataSchema{
-			"Message1": createInitialMessageDataSchemaOneProperty("testField"),
-			"Message2": createInitialMessageDataSchemaOneProperty("testField"),
-		},
-		lm: []refMesTuple{
-			{pm: "Message1", t: "Message2", n: "testField"},
-			{pm: "Message2", t: "Message1", n: "testField"},
-		},
-	},
-	{
-		ds: map[string]*wot.DataSchema{
-			"Message1": createInitialMessageDataSchemaOneProperty("testField"),
-		},
-		lm: []refMesTuple{
-			{pm: "Message1", t: "Message2", n: "testField"},
-		},
-	},
-	{
-		ds: map[string]*wot.DataSchema{
-			"Message1":                   createInitialMessageDataSchemaOneProperty("testField"),
-			"Message1.Message2":          createInitialMessageDataSchemaEmpty(),
-			"Message1.Message2.Message3": createInitialMessageDataSchemaEmpty(),
-		},
-		lm: []refMesTuple{
-			{pm: "Message1", t: "Message3", n: "testField"},
-		},
-	},
-	{
-		ds: map[string]*wot.DataSchema{
-			"Message1":          createInitialMessageDataSchemaOneProperty("testField"),
-			"Message1.Message2": createInitialMessageDataSchemaEmpty(),
-			"Message3":          createInitialMessageDataSchemaEmpty(),
-			"Message3.Message4": createInitialMessageDataSchemaEmpty(),
-		},
-		lm: []refMesTuple{
-			{pm: "Message1", t: "Message4", n: "testField"},
-		},
-	},
-}
-
-func TestConstructMessageNestedError(t *testing.T) {
-	for _, tt := range constructMessageNestedError {
-		err := tt.constructMessagesNested()
-
-		if err == nil {
-			t.Errorf("Expected error for builder %v", tt)
 		}
 	}
 }

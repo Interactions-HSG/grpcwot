@@ -5,22 +5,21 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Interactions-HSG/grpcwot/pkg/protofmt"
 	"github.com/emicklei/proto"
 	"github.com/linksmart/thing-directory/wot"
 )
 
 type builder struct {
 	td   wot.ThingDescription
-	ds   map[string]*wot.DataSchema
+	dsb  *dataSchemaBuilder
 	ip   string
 	port int
 }
 
-func newBuilder(ip string, port int) *builder {
+func newBuilder(ip string, port int, dsb *dataSchemaBuilder) *builder {
 	return &builder{
 		td:   wot.ThingDescription{},
-		ds:   map[string]*wot.DataSchema{},
+		dsb:  dsb,
 		ip:   ip,
 		port: port,
 	}
@@ -44,8 +43,8 @@ func (b *builder) HandleRPC(r *proto.RPC) {
 		b.td.Actions = map[string]wot.ActionAffordance{}
 	}
 	affordance := wot.ActionAffordance{}
-	affordance.Input = *b.ds[r.RequestType]
-	affordance.Output = *b.ds[r.ReturnsType]
+	affordance.Input = *b.dsb.ds[r.RequestType]
+	affordance.Output = *b.dsb.ds[r.ReturnsType]
 	affordance.Forms = []wot.Form{
 		{
 			Href:        b.GetIRI(r.Name),
@@ -57,62 +56,8 @@ func (b *builder) HandleRPC(r *proto.RPC) {
 	b.td.Actions[r.Name] = affordance
 }
 
-// HandleMessage build a DataSchema: https://www.w3.org/TR/wot-thing-description/#dataschema
-// from a Message in the protobuf definition
-func (b *builder) HandleMessage(m *proto.Message) {
-	if _, ok := b.ds[m.Name]; !ok {
-		b.ds[m.Name] = &wot.DataSchema{
-			DataType: "object",
-			ObjectSchema: &wot.ObjectSchema{
-				Properties: map[string]wot.DataSchema{},
-			},
-		}
-	}
-	for _, v := range m.Elements {
-		switch protofmt.NameOfVisitee(v) {
-		case "NormalField":
-			b.ds[m.Name].ObjectSchema.Properties[v.(*proto.NormalField).Field.Name] =
-				fieldToDataSchema(v.(*proto.NormalField).Field)
-		case "Comment":
-		case "Oneof":
-			b.ds[m.Name].ObjectSchema.Properties[v.(*proto.Oneof).Name] =
-				wot.DataSchema{OneOf: oneofToDataSchema(v.(*proto.Oneof))}
-		}
-	}
-}
-
-// fieldToDataSchema converts the given proto's message field into a WoT DataScheme
-// cf. https://www.w3.org/TR/wot-thing-description/#dataschema
-func fieldToDataSchema(f *proto.Field) wot.DataSchema {
-	var fieldType string
-	switch f.Type {
-	case "double", "float":
-		fieldType = "number"
-	case "int32", "int64", "uint32", "uint64", "sint32", "sint64", "fixed32", "fixed64", "sfixed32", "sfixed64":
-		fieldType = "integer"
-	case "bool":
-		fieldType = "boolean"
-	case "string", "bytes":
-		fieldType = "string"
-	default:
-		fieldType = "object"
-	}
-
-	return wot.DataSchema{DataType: fieldType}
-}
-
-func oneofToDataSchema(oo *proto.Oneof) []wot.DataSchema {
-	oof := []wot.DataSchema{}
-	for _, v := range oo.Elements {
-		oof = append(oof, fieldToDataSchema(v.(*proto.OneOfField).Field))
-	}
-	return oof
-}
-
 // GenerateTDfromProtoBuf parses `protoFile` to generate `tdFile`
 func GenerateTDfromProtoBuf(protoFile, tdFile, ip string, port int) error {
-	// initialize the TD builder with an empty TD and DataSchema
-	b := newBuilder(ip, port)
 
 	// parse the protoFile with the emicklei/proto
 	reader, _ := os.Open(protoFile)
@@ -123,13 +68,18 @@ func GenerateTDfromProtoBuf(protoFile, tdFile, ip string, port int) error {
 		return nil
 	}
 
-	// extract the Messages as DataSchema
-	proto.Walk(definition,
-		proto.WithService(b.HandleService),
-		proto.WithMessage(b.HandleMessage))
+	// Read the Messages and produce DataSchemes
+	dsb, err := generateDataSchemas(definition)
+	if err != nil {
+		return err
+	}
+
+	// initialize the TD builder with an empty TD and DataSchema
+	b := newBuilder(ip, port, dsb)
 
 	// translate the RPC functions into Interaction Affordances
 	proto.Walk(definition,
+		proto.WithService(b.HandleService),
 		proto.WithRPC(b.HandleRPC))
 
 	// serialize the TD to JSONLD

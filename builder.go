@@ -57,9 +57,7 @@ func (b *builder) HandleRPC(r *proto.RPC) {
 }
 
 // GenerateTDfromProtoBuf parses `protoFile` to generate `tdFile`
-func GenerateTDfromProtoBuf(protoFile, tdFile, ip string, port int) error {
-
-	// parse the protoFile with the emicklei/proto
+func GenerateTDfromProtoBuf(protoFile, tdFile, ip string, port int) error { // parse the protoFile with the emicklei/proto
 	reader, _ := os.Open(protoFile)
 	defer reader.Close()
 	parser := proto.NewParser(reader)
@@ -81,6 +79,12 @@ func GenerateTDfromProtoBuf(protoFile, tdFile, ip string, port int) error {
 	proto.Walk(definition,
 		proto.WithService(b.HandleService),
 		proto.WithRPC(b.HandleRPC))
+
+	iab, err := generateInteractionAffordances(definition, dsb)
+
+	if iab == nil {
+		return err
+	}
 
 	// serialize the TD to JSONLD
 	tdBytes, _ := json.Marshal(b.td)

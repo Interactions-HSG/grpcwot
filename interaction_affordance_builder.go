@@ -29,9 +29,10 @@ type affClasses struct {
 }
 
 type combinedProperties struct {
-	name    string
-	getProp affs
-	setProp affs
+	name     string
+	getProp  affs
+	setProp  affs
+	category int // 0: read only; 1: write only; 2: readwrite
 }
 
 type affs struct {
@@ -127,17 +128,30 @@ func (b *interactionAffordanceBuilder) checkPropertyCombination(p affs, s1, s2 s
 		}
 		if isGet {
 			b.affC.combinedProp = append(b.affC.combinedProp, combinedProperties{
-				name:    propName,
-				getProp: p,
-				setProp: cand,
+				name:     propName,
+				getProp:  p,
+				setProp:  cand,
+				category: getPropertyCategory(p.name, cand.name),
 			})
 		} else {
 			b.affC.combinedProp = append(b.affC.combinedProp, combinedProperties{
-				name:    propName,
-				getProp: cand,
-				setProp: p,
+				name:     propName,
+				getProp:  cand,
+				setProp:  p,
+				category: getPropertyCategory(cand.name, p.name),
 			})
 		}
+	}
+}
+
+func getPropertyCategory(get, set string) int {
+	switch {
+	case set == "":
+		return 0
+	case get == "":
+		return 1
+	default:
+		return 2
 	}
 }
 
@@ -220,6 +234,8 @@ func generateInteractionAffordances(protoFile *proto.Proto, dsb *dataSchemaBuild
 	}
 
 	b.categorizeRPCs()
+
+	b.groupProperties()
 
 	return b, nil
 }

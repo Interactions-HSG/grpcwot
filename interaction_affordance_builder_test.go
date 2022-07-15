@@ -440,9 +440,46 @@ var combinePropertiesTest = []struct {
 		affClasses{
 			combinedProp: []combinedProperties{
 				{
-					name:    "Test1",
-					getProp: combinePropertiesTestAffordances["GetTest1WithSameResAsSet"],
-					setProp: combinePropertiesTestAffordances["SetTest1WithSameReqAsGet"],
+					name:     "Test1",
+					getProp:  combinePropertiesTestAffordances["GetTest1WithSameResAsSet"],
+					setProp:  combinePropertiesTestAffordances["SetTest1WithSameReqAsGet"],
+					category: 2,
+				},
+			},
+		},
+	},
+	{
+		interactionAffordanceBuilder{
+			affC: affClasses{
+				prop: []affs{
+					combinePropertiesTestAffordances["GetTest1WithSameResAsSet"],
+				},
+			},
+		},
+		affClasses{
+			combinedProp: []combinedProperties{
+				{
+					name:     "Test1",
+					getProp:  combinePropertiesTestAffordances["GetTest1WithSameResAsSet"],
+					category: 0,
+				},
+			},
+		},
+	},
+	{
+		interactionAffordanceBuilder{
+			affC: affClasses{
+				prop: []affs{
+					combinePropertiesTestAffordances["SetTest1WithSameReqAsGet"],
+				},
+			},
+		},
+		affClasses{
+			combinedProp: []combinedProperties{
+				{
+					name:     "Test1",
+					setProp:  combinePropertiesTestAffordances["SetTest1WithSameReqAsGet"],
+					category: 1,
 				},
 			},
 		},
@@ -459,9 +496,10 @@ var combinePropertiesTest = []struct {
 		affClasses{
 			combinedProp: []combinedProperties{
 				{
-					name:    "Test1",
-					getProp: combinePropertiesTestAffordances["GetTest1WithSameResAsSet"],
-					setProp: combinePropertiesTestAffordances["SetTest1WithSameReqAsGet"],
+					name:     "Test1",
+					getProp:  combinePropertiesTestAffordances["GetTest1WithSameResAsSet"],
+					setProp:  combinePropertiesTestAffordances["SetTest1WithSameReqAsGet"],
+					category: 2,
 				},
 			},
 		},
@@ -478,8 +516,9 @@ var combinePropertiesTest = []struct {
 		affClasses{
 			combinedProp: []combinedProperties{
 				{
-					name:    "Test2",
-					getProp: combinePropertiesTestAffordances["GetTest2WithDifferentResAsSet"],
+					name:     "Test2",
+					getProp:  combinePropertiesTestAffordances["GetTest2WithDifferentResAsSet"],
+					category: 0,
 				},
 			},
 			action: []affs{
@@ -499,12 +538,14 @@ var combinePropertiesTest = []struct {
 		affClasses{
 			combinedProp: []combinedProperties{
 				{
-					name:    "Test3Get",
-					getProp: combinePropertiesTestAffordances["GetTest3WithDifferentNameAndDifferentReqRes"],
+					name:     "Test3Get",
+					getProp:  combinePropertiesTestAffordances["GetTest3WithDifferentNameAndDifferentReqRes"],
+					category: 0,
 				},
 				{
-					name:    "Test3Set",
-					setProp: combinePropertiesTestAffordances["SetTest3WithDifferentNameAndDifferentReqRes"],
+					name:     "Test3Set",
+					setProp:  combinePropertiesTestAffordances["SetTest3WithDifferentNameAndDifferentReqRes"],
+					category: 1,
 				},
 			},
 		},
@@ -538,5 +579,8 @@ func equalsCombinedPropsSlice(e []combinedProperties, a []combinedProperties, t 
 }
 
 func equalsCombinedProps(a combinedProperties, b combinedProperties) bool {
-	return a.setProp == b.setProp && a.getProp == b.getProp && a.name == b.name
+	return a.setProp == b.setProp &&
+		a.getProp == b.getProp &&
+		a.name == b.name &&
+		a.category == b.category
 }

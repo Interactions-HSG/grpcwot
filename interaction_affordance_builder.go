@@ -22,9 +22,16 @@ type catProps struct {
 }
 
 type affClasses struct {
-	prop   []affs
-	action []affs
-	event  []affs
+	combinedProp []combinedProperties
+	prop         []affs
+	action       []affs
+	event        []affs
+}
+
+type combinedProperties struct {
+	name    string
+	getProp affs
+	setProp affs
 }
 
 type affs struct {
@@ -39,6 +46,7 @@ func newInteractionAffordanceBuilder(dsb *dataSchemaBuilder) *interactionAfforda
 		map[string]affs{},
 		dsb,
 		affClasses{
+			[]combinedProperties{},
 			[]affs{},
 			[]affs{},
 			[]affs{},
@@ -76,6 +84,61 @@ func (b *interactionAffordanceBuilder) conformRPCs() error {
 		}
 	}
 	return nil
+}
+
+func (b *interactionAffordanceBuilder) groupProperties() {
+	empty := affs{}
+	for k, v := range b.affC.prop {
+		if v == empty {
+			continue
+		}
+		b.affC.prop[k] = empty
+		b.checkPropertyCombination(v, "GET", "SET", true, empty)
+		b.checkPropertyCombination(v, "SET", "GET", false, empty)
+	}
+}
+
+func (b *interactionAffordanceBuilder) checkPropertyCombination(p affs, s1, s2 string, isGet bool, empty affs) {
+	pName := strings.ToUpper(p.name)
+	if strings.HasPrefix(pName, s1) {
+		propName := p.name[3:]
+		var cand affs
+
+		for k, v := range b.affC.prop {
+			if v == empty {
+				continue
+			}
+			if strings.HasPrefix(strings.ToUpper(v.name), s2) && v.name[3:] == propName {
+				if (isGet && v.req == p.res) ||
+					(!isGet && v.res == p.req) {
+					cand = v
+					b.affC.prop[k] = empty
+					break
+				} else {
+					if isGet {
+						b.affC.action = append(b.affC.action, v)
+						b.affC.prop[k] = empty
+					} else {
+						b.affC.action = append(b.affC.action, p)
+						return
+					}
+				}
+			}
+		}
+		if isGet {
+			b.affC.combinedProp = append(b.affC.combinedProp, combinedProperties{
+				name:    propName,
+				getProp: p,
+				setProp: cand,
+			})
+		} else {
+			b.affC.combinedProp = append(b.affC.combinedProp, combinedProperties{
+				name:    propName,
+				getProp: cand,
+				setProp: p,
+			})
+		}
+	}
 }
 
 type checkCondition func(affs) bool

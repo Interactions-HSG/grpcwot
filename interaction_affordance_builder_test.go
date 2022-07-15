@@ -335,3 +335,208 @@ func equals(a1 []affs, a2 []affs, t *testing.T) {
 		}
 	}
 }
+
+var sameDataSets = map[string]*wot.DataSchema{
+	"DS1": {
+		DataType: "object",
+		ObjectSchema: &wot.ObjectSchema{
+			Properties: map[string]wot.DataSchema{
+				"Test": {},
+			},
+		},
+	},
+	"DS2": {
+		DataType: "object",
+		ObjectSchema: &wot.ObjectSchema{
+			Properties: map[string]wot.DataSchema{
+				"Test": {},
+			},
+		},
+	},
+	"DS3": {
+		DataType: "object",
+		ObjectSchema: &wot.ObjectSchema{
+			Properties: map[string]wot.DataSchema{
+				"Test": {},
+			},
+		},
+	},
+}
+
+var combinePropertiesTestAffordances = map[string]affs{
+	"GetTest1WithSameResAsSet": {
+		name: "GetTest1",
+		req:  &wot.DataSchema{},
+		res:  sameDataSets["DS1"],
+	},
+	"SetTest1WithSameReqAsGet": {
+		name: "SetTest1",
+		req:  sameDataSets["DS1"],
+		res:  &wot.DataSchema{},
+	},
+	"GetTest2WithDifferentResAsSet": {
+		name: "GetTest2",
+		req:  &wot.DataSchema{},
+		res:  sameDataSets["DS2"],
+	},
+	"SetTest2WithDifferentReqAsGet": {
+		name: "SetTest2",
+		req:  sameDataSets["DS3"],
+		res:  &wot.DataSchema{},
+	},
+	"GetTest3WithDifferentNameAndDifferentReqRes": {
+		name: "GetTest3Get",
+		req: &wot.DataSchema{
+			DataType: "object",
+			ObjectSchema: &wot.ObjectSchema{
+				Properties: map[string]wot.DataSchema{
+					"Test": {},
+				},
+			},
+		},
+		res: &wot.DataSchema{
+			DataType: "object",
+			ObjectSchema: &wot.ObjectSchema{
+				Properties: map[string]wot.DataSchema{
+					"Test": {},
+				},
+			},
+		},
+	},
+	"SetTest3WithDifferentNameAndDifferentReqRes": {
+		name: "SetTest3Set",
+		req: &wot.DataSchema{
+			DataType: "object",
+			ObjectSchema: &wot.ObjectSchema{
+				Properties: map[string]wot.DataSchema{
+					"Test": {},
+				},
+			},
+		},
+		res: &wot.DataSchema{
+			DataType: "object",
+			ObjectSchema: &wot.ObjectSchema{
+				Properties: map[string]wot.DataSchema{
+					"Test": {},
+				},
+			},
+		},
+	},
+}
+
+var combinePropertiesTest = []struct {
+	inIab interactionAffordanceBuilder
+	out   affClasses
+}{
+	{
+		interactionAffordanceBuilder{
+			affC: affClasses{
+				prop: []affs{
+					combinePropertiesTestAffordances["GetTest1WithSameResAsSet"],
+					combinePropertiesTestAffordances["SetTest1WithSameReqAsGet"],
+				},
+			},
+		},
+		affClasses{
+			combinedProp: []combinedProperties{
+				{
+					name:    "Test1",
+					getProp: combinePropertiesTestAffordances["GetTest1WithSameResAsSet"],
+					setProp: combinePropertiesTestAffordances["SetTest1WithSameReqAsGet"],
+				},
+			},
+		},
+	},
+	{
+		interactionAffordanceBuilder{
+			affC: affClasses{
+				prop: []affs{
+					combinePropertiesTestAffordances["SetTest1WithSameReqAsGet"],
+					combinePropertiesTestAffordances["GetTest1WithSameResAsSet"],
+				},
+			},
+		},
+		affClasses{
+			combinedProp: []combinedProperties{
+				{
+					name:    "Test1",
+					getProp: combinePropertiesTestAffordances["GetTest1WithSameResAsSet"],
+					setProp: combinePropertiesTestAffordances["SetTest1WithSameReqAsGet"],
+				},
+			},
+		},
+	},
+	{
+		interactionAffordanceBuilder{
+			affC: affClasses{
+				prop: []affs{
+					combinePropertiesTestAffordances["GetTest2WithDifferentResAsSet"],
+					combinePropertiesTestAffordances["SetTest2WithDifferentReqAsGet"],
+				},
+			},
+		},
+		affClasses{
+			combinedProp: []combinedProperties{
+				{
+					name:    "Test2",
+					getProp: combinePropertiesTestAffordances["GetTest2WithDifferentResAsSet"],
+				},
+			},
+			action: []affs{
+				combinePropertiesTestAffordances["SetTest2WithDifferentReqAsGet"],
+			},
+		},
+	},
+	{
+		interactionAffordanceBuilder{
+			affC: affClasses{
+				prop: []affs{
+					combinePropertiesTestAffordances["GetTest3WithDifferentNameAndDifferentReqRes"],
+					combinePropertiesTestAffordances["SetTest3WithDifferentNameAndDifferentReqRes"],
+				},
+			},
+		},
+		affClasses{
+			combinedProp: []combinedProperties{
+				{
+					name:    "Test3Get",
+					getProp: combinePropertiesTestAffordances["GetTest3WithDifferentNameAndDifferentReqRes"],
+				},
+				{
+					name:    "Test3Set",
+					setProp: combinePropertiesTestAffordances["SetTest3WithDifferentNameAndDifferentReqRes"],
+				},
+			},
+		},
+	},
+}
+
+func TestGroupProperties(t *testing.T) {
+	for _, v := range combinePropertiesTest {
+		v.inIab.groupProperties()
+		equalsCombinedPropsSlice(v.out.combinedProp, v.inIab.affC.combinedProp, t)
+		equals(v.out.action, v.inIab.affC.action, t)
+	}
+}
+
+func equalsCombinedPropsSlice(e []combinedProperties, a []combinedProperties, t *testing.T) {
+	if len(e) != len(a) {
+		t.Errorf("The length differs for the provided affordances.\n Expected slice %v\n but got: %v\n", e, a)
+	} else {
+	l:
+		for k, v := range e {
+			if !equalsCombinedProps(a[k], v) {
+				for _, v2 := range a {
+					if equalsCombinedProps(v, v2) {
+						continue l
+					}
+				}
+				t.Errorf("One expected element was not found. \n Expected: %v\n but was not in: %v\n", v, a)
+			}
+		}
+	}
+}
+
+func equalsCombinedProps(a combinedProperties, b combinedProperties) bool {
+	return a.setProp == b.setProp && a.getProp == b.getProp && a.name == b.name
+}

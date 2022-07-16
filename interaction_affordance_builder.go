@@ -64,6 +64,7 @@ func (b *interactionAffordanceBuilder) HandleRPC(r *proto.RPC) {
 	b.rpcs = append(b.rpcs, r)
 }
 
+// combine RPCs together with their DataSchemes. Checks if the proto file was valid with regards to the RPCs
 func (b *interactionAffordanceBuilder) conformRPCs() error {
 	b.affs = map[string]affs{}
 	for _, v := range b.rpcs {
@@ -87,6 +88,7 @@ func (b *interactionAffordanceBuilder) conformRPCs() error {
 	return nil
 }
 
+// group together belonging properties if their request and response type as well as their name match
 func (b *interactionAffordanceBuilder) groupProperties() {
 	empty := affs{}
 	for k, v := range b.affC.prop {
@@ -99,6 +101,7 @@ func (b *interactionAffordanceBuilder) groupProperties() {
 	}
 }
 
+// helper function for groupProperties
 func (b *interactionAffordanceBuilder) checkPropertyCombination(p affs, s1, s2 string, isGet bool, empty affs) {
 	pName := strings.ToUpper(p.Name)
 	if strings.HasPrefix(pName, s1) {
@@ -144,6 +147,7 @@ func (b *interactionAffordanceBuilder) checkPropertyCombination(p affs, s1, s2 s
 	}
 }
 
+// Determines the category for a properts (0: readonly, 1: writeonly, 2: readwrite)
 func getPropertyCategory(get, set string) int {
 	switch {
 	case set == "":
@@ -155,6 +159,7 @@ func getPropertyCategory(get, set string) int {
 	}
 }
 
+// checkCondition type that can build a filter for RPCs. The implementations of this type are scripted below
 type checkCondition func(affs) bool
 
 func defaultConfig(_ affs) bool {
@@ -209,6 +214,7 @@ func not(condition checkCondition) checkCondition {
 	}
 }
 
+// Apply checkConditions and filter properties -> events -> actions
 func (b *interactionAffordanceBuilder) categorizeRPCs() {
 	for _, v := range b.affs {
 		switch {
@@ -255,6 +261,7 @@ func (b *interactionAffordanceBuilder) categorizeRPCsWithConfig(ac map[string]af
 	return nil
 }
 
+// generate Interaction Affordance based on checkConditions for classification
 func generateInteractionAffordances(protoFile *proto.Proto, dsb *dataSchemaBuilder) (*interactionAffordanceBuilder, error) {
 	b := newInteractionAffordanceBuilder(dsb)
 
@@ -273,6 +280,7 @@ func generateInteractionAffordances(protoFile *proto.Proto, dsb *dataSchemaBuild
 	return b, nil
 }
 
+// generate Interaction Affordance when a configuration file is provided
 func generateInteractionAffordancesWithConfig(protoFile *proto.Proto, dsb *dataSchemaBuilder, ac map[string]affClassConfig) (*interactionAffordanceBuilder, error) {
 	b := newInteractionAffordanceBuilder(dsb)
 

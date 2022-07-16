@@ -38,6 +38,31 @@ COMMANDS:
 GLOBAL OPTIONS:
    --port value, -p value  The port for the gRPC service (default: 50051)
    --ip value              The IP address for the gRPC serivce (default: "127.0.0.1")
-   --output FILE, -o FILE  Write the resulting Thing Description to FILE (default: "td.jsonld")
+   --output DIR, -o DIR    Write the resulting Thing Description and applied configuration to DIR (default: "output/")
+   --config FILE, -c FILE  Use a configuration file for the interaction affordance classification
    --help, -h              show help (default: false)
 ```
+
+#### CLI - Affordance Classification
+Using the CLI in normal mode allows the user to decide on the classification of RPCs to specific affordances.
+The user can therefore approve an assertion by the CLI on the classification or change the classification by typing:
+- `a` for move to action
+- `e` for move to event
+- `p` for move to property
+
+#### Configuration Mode
+A configuration file can be provided to the application. 
+This file predefines the classification and the user does not need to manually confirm or change the assertions.
+A provided configuration file must match the proto file, by defining exactly the same RPC names that are in the proto file.
+The configuration file must be a JSON file, structured as following:
+
+```json
+{
+  "<NameOfRPC>": {
+    "AffClass": "<AffordanceClass>",
+    "Name": "<AffordanceName>"
+  }
+}
+```
+- `AffordanceClass`: Allowed values are `property`, `action`, and `event`
+- `AffordanceName`: Describes the name of the affordance where the RPC should be added. In case of action and event this will mostly be the same as `NameOfRPC`. For properties this is more important, as for example `GetMode` and `SetMode` can be matched to form the property `Mode` through the according `AffordanceName` setting.

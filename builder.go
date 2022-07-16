@@ -314,6 +314,7 @@ func GenerateTDfromProtoBuf(protoFile, outputDir, classConfigFile, ip string, po
 	return nil
 }
 
+// structure of the server response for classified affordances
 type serverAffordances struct {
 	Props   []serverProperty
 	Actions []serverAffordance
@@ -343,6 +344,7 @@ type serverProp struct {
 	Value serverDataSchema
 }
 
+// Called from /server/server.go to build parse the received proto file and return the classified affordances
 func GetProtoBufInformation(protofile io.Reader) ([]byte, error) {
 	b, err := fillBuilder(protofile, "", 0, false, true, "")
 	if err != nil {
@@ -392,6 +394,7 @@ func GetProtoBufInformation(protofile io.Reader) ([]byte, error) {
 	return result, nil
 }
 
+// Creates the response body for the server request holding the classified affordances
 func createServerDataSchema(ds *wot.DataSchema) serverDataSchema {
 	if ds == nil {
 		return serverDataSchema{}
@@ -418,6 +421,7 @@ func createServerDataSchema(ds *wot.DataSchema) serverDataSchema {
 
 }
 
+// Helper function to start the builder for server, configuration-based, and normal runs
 func fillBuilder(reader io.Reader, ip string, port int, configSet, isServer bool, classConfigFile string) (*builder, error) {
 	parser := proto.NewParser(reader)
 	definition, err := parser.Parse()
@@ -450,6 +454,10 @@ func fillBuilder(reader io.Reader, ip string, port int, configSet, isServer bool
 
 		// Apply predefined configuration and classify affordances according to that
 		b.iab, err = generateInteractionAffordancesWithConfig(definition, dsb, b.ac)
+
+		if err != nil {
+			return b, err
+		}
 
 		// Save affordances to the TD
 		b.saveAfterConfigRPC()

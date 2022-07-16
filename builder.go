@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -79,47 +80,47 @@ func (b *builder) saveToAffClass(k, n, affClass string) {
 func (b *builder) saveProperty(p combinedProperties) {
 	affordance := wot.PropertyAffordance{}
 	var ops []string
-	switch p.category {
+	switch p.Category {
 	case 0:
-		b.saveToAffClass(p.getProp.name, p.name, "property")
-		affordance.DataSchema = *p.getProp.res
+		b.saveToAffClass(p.GetProp.Name, p.Name, "property")
+		affordance.DataSchema = *p.GetProp.Res
 		ops = []string{"readproperty"}
 	case 1:
-		b.saveToAffClass(p.setProp.name, p.name, "property")
-		affordance.DataSchema = *p.setProp.req
+		b.saveToAffClass(p.SetProp.Name, p.Name, "property")
+		affordance.DataSchema = *p.SetProp.Req
 		ops = []string{"writeproperty"}
 	case 2:
-		b.saveToAffClass(p.getProp.name, p.name, "property")
-		b.saveToAffClass(p.setProp.name, p.name, "property")
-		affordance.DataSchema = *p.getProp.res
+		b.saveToAffClass(p.GetProp.Name, p.Name, "property")
+		b.saveToAffClass(p.SetProp.Name, p.Name, "property")
+		affordance.DataSchema = *p.GetProp.Res
 		ops = []string{"readproperty", "writeproperty"}
 	default:
 		return
 	}
 
-	affordance.Forms = b.getForms(p.name, ops)
-	b.td.Properties[p.name] = affordance
+	affordance.Forms = b.getForms(p.Name, ops)
+	b.td.Properties[p.Name] = affordance
 }
 
 // saveAction converts and saves a RPC function to an Action Affordance in the TD
 func (b *builder) saveAction(r affs) {
 	affordance := wot.ActionAffordance{}
-	affordance.Input = *r.req
-	affordance.Output = *r.res
-	affordance.Forms = b.getForms(r.name, []string{})
-	b.td.Actions[r.name] = affordance
+	affordance.Input = *r.Req
+	affordance.Output = *r.Res
+	affordance.Forms = b.getForms(r.Name, []string{})
+	b.td.Actions[r.Name] = affordance
 
-	b.saveToAffClass(r.name, r.name, "action")
+	b.saveToAffClass(r.Name, r.Name, "action")
 }
 
 // saveEvent converts and saves a RPC function to an Event Affordance in the TD
 func (b *builder) saveEvent(r affs) {
 	affordance := wot.EventAffordance{}
-	affordance.Data = *r.res
-	affordance.Forms = b.getForms(r.name, []string{})
-	b.td.Events[r.name] = affordance
+	affordance.Data = *r.Res
+	affordance.Forms = b.getForms(r.Name, []string{})
+	b.td.Events[r.Name] = affordance
 
-	b.saveToAffClass(r.name, r.name, "event")
+	b.saveToAffClass(r.Name, r.Name, "event")
 }
 
 // readInput is a helper function to read in input from the user
@@ -142,7 +143,7 @@ func readInput(reader *bufio.Reader, s, k string, v []string) string {
 
 // categorizeAffordancesWithUserInput asks the user for validation of the made classification decisions and saves the
 // affordances to the TD
-func (b *builder) categorizeAffordancesWithUserInput() {
+func (b *builder) categorizeAffordances() {
 	fmt.Println("The following interaction affordances are already classified according to specific criterias." +
 		"If you want to change the classification for a specific affordance please enter")
 	fmt.Println("- (p) for property")
@@ -156,63 +157,63 @@ func (b *builder) categorizeAffordancesWithUserInput() {
 		fmt.Println("The following were considered as properties: ")
 	}
 	for _, v := range b.iab.affC.combinedProp {
-		t := readInput(reader, "Property", v.name, []string{v.getProp.name, v.setProp.name})
+		t := readInput(reader, "Property", v.Name, []string{v.GetProp.Name, v.SetProp.Name})
 		switch t {
 		case "":
 			fallthrough
 		case "p":
 			b.saveProperty(v)
 		case "a":
-			switch v.category {
+			switch v.Category {
 			case 2:
 				fmt.Println("Should only the setter become an action (set) or both (both)?")
 				fmt.Print("->")
 				t, _ := reader.ReadString('\n')
 				t = strings.TrimSpace(t)
 				if t == "set" {
-					b.saveAction(v.setProp)
-					v.setProp = affs{}
-					v.category = 0
+					b.saveAction(v.SetProp)
+					v.SetProp = affs{}
+					v.Category = 0
 					b.saveProperty(v)
 				} else if t == "both" {
-					b.saveAction(v.getProp)
-					b.saveAction(v.setProp)
+					b.saveAction(v.GetProp)
+					b.saveAction(v.SetProp)
 				}
 			case 1:
-				b.saveAction(v.setProp)
+				b.saveAction(v.SetProp)
 			case 0:
-				b.saveAction(v.getProp)
+				b.saveAction(v.GetProp)
 			}
 		case "e":
-			if v.category == 2 {
-				v.category = 1
+			if v.Category == 2 {
+				v.Category = 1
 				b.saveProperty(v)
 			}
-			b.saveEvent(v.getProp)
+			b.saveEvent(v.GetProp)
 		}
 	}
 	if len(b.iab.affC.action) != 0 {
 		fmt.Println("The following were considered as actions: ")
 	}
 	for _, v := range b.iab.affC.action {
-		t := readInput(reader, "Action", v.name, []string{v.name})
+		t := readInput(reader, "Action", v.Name, []string{v.Name})
 		switch t {
 		case "":
 			fallthrough
 		case "a":
 			b.saveAction(v)
 		case "p":
-			if v.req.Type == "" {
+			if v.Req.Type == "" {
 				b.saveProperty(combinedProperties{
-					name:     v.name,
-					getProp:  v,
-					category: 0,
+					Name:     v.Name,
+					GetProp:  v,
+					Category: 0,
 				})
 			} else {
 				b.saveProperty(combinedProperties{
-					name:     v.name,
-					setProp:  v,
-					category: 1,
+					Name:     v.Name,
+					SetProp:  v,
+					Category: 1,
 				})
 			}
 		case "e":
@@ -223,7 +224,7 @@ func (b *builder) categorizeAffordancesWithUserInput() {
 		fmt.Println("The following were considered as events: ")
 	}
 	for _, v := range b.iab.affC.event {
-		t := readInput(reader, "Event", v.name, []string{v.name})
+		t := readInput(reader, "Event", v.Name, []string{v.Name})
 		switch t {
 		case "":
 			fallthrough
@@ -231,9 +232,9 @@ func (b *builder) categorizeAffordancesWithUserInput() {
 			b.saveEvent(v)
 		case "p":
 			b.saveProperty(combinedProperties{
-				name:     v.name,
-				getProp:  v,
-				category: 0,
+				Name:     v.Name,
+				GetProp:  v,
+				Category: 0,
 			})
 		case "a":
 			b.saveAction(v)
@@ -241,7 +242,7 @@ func (b *builder) categorizeAffordancesWithUserInput() {
 	}
 }
 
-//saveAfterConfigRPC Saves the affordances to the TD with the classification derived from the vonfig
+// saveAfterConfigRPC Saves the affordances to the TD with the classification derived from the vonfig
 func (b *builder) saveAfterConfigRPC() {
 	for _, v := range b.iab.affC.combinedProp {
 		b.saveProperty(v)
@@ -268,32 +269,13 @@ func contains(a []string, s string) bool {
 func GenerateTDfromProtoBuf(protoFile, tdFile, ip string, port int) error { // parse the protoFile with the emicklei/proto
 	reader, _ := os.Open(protoFile)
 	defer reader.Close()
-	parser := proto.NewParser(reader)
-	definition, err := parser.Parse()
-	if err != nil {
-		return nil
-	}
 
-	// Read the Messages and produce DataSchemes
-	dsb, err := generateDataSchemas(definition)
+	b, err := fillBuilder(reader, ip, port)
 	if err != nil {
 		return err
 	}
 
-	// initialize the TD builder with an empty TD and DataSchema
-	b := newBuilder(ip, port, dsb)
-
-	// translate the RPC functions into Interaction Affordances
-	proto.Walk(definition,
-		proto.WithService(b.HandleService))
-
-	b.iab, err = generateInteractionAffordances(definition, dsb)
-
-	if b.iab == nil {
-		return err
-	}
-
-	b.categorizeAffordancesWithUserInput()
+	b.categorizeAffordances()
 
 	// serialize the TD to JSONLD
 	tdBytes, _ := json.Marshal(b.td)
@@ -307,4 +289,143 @@ func GenerateTDfromProtoBuf(protoFile, tdFile, ip string, port int) error { // p
 		return err
 	}
 	return nil
+}
+
+type serverAffordances struct {
+	Props   []serverProperty
+	Actions []serverAffordance
+	Events  []serverAffordance
+}
+
+type serverProperty struct {
+	Name     string
+	GetProp  serverAffordance
+	SetProp  serverAffordance
+	Category int
+}
+
+type serverAffordance struct {
+	Name string
+	Req  serverDataSchema
+	Res  serverDataSchema
+}
+
+type serverDataSchema struct {
+	Type       string
+	Properties []serverProp
+}
+
+type serverProp struct {
+	Key   string
+	Value serverDataSchema
+}
+
+func GetProtoBufInformation(protofile io.Reader) ([]byte, error) {
+	b, err := fillBuilder(protofile, "", 0)
+	if err != nil {
+		return []byte{}, err
+	}
+	res2 := serverAffordances{
+		Props:   []serverProperty{},
+		Actions: []serverAffordance{},
+		Events:  []serverAffordance{},
+	}
+	for _, elem := range b.iab.affC.combinedProp {
+		res2.Props = append(res2.Props, serverProperty{
+			Name: elem.Name,
+			GetProp: serverAffordance{
+				Name: elem.GetProp.Name,
+				Req:  createServerDataSchema(elem.GetProp.Req),
+				Res:  createServerDataSchema(elem.GetProp.Res),
+			},
+			SetProp: serverAffordance{
+				Name: elem.SetProp.Name,
+				Req:  createServerDataSchema(elem.SetProp.Req),
+				Res:  createServerDataSchema(elem.SetProp.Res),
+			},
+			Category: elem.Category,
+		})
+	}
+	for _, elem := range b.iab.affC.action {
+		res2.Actions = append(res2.Actions, serverAffordance{
+			Name: elem.Name,
+			Req:  createServerDataSchema(elem.Req),
+			Res:  createServerDataSchema(elem.Res),
+		})
+	}
+	for _, elem := range b.iab.affC.event {
+		res2.Events = append(res2.Events, serverAffordance{
+			Name: elem.Name,
+			Req:  createServerDataSchema(elem.Req),
+			Res:  createServerDataSchema(elem.Res),
+		})
+	}
+
+	/*res := parsedResult{
+		b.iab.affC.combinedProp,
+		b.iab.affC.action,
+		b.iab.affC.event,
+	}*/
+
+	result, err := json.Marshal(res2)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	return result, nil
+}
+
+func createServerDataSchema(ds *wot.DataSchema) serverDataSchema {
+	if ds == nil {
+		return serverDataSchema{}
+	}
+	if ds.ObjectSchema == nil || len(ds.Properties) == 0 {
+		return serverDataSchema{
+			Type: ds.DataType,
+		}
+	} else {
+		props := make([]serverProp, len(ds.Properties))
+		i := 0
+		for k, v := range ds.Properties {
+			props[i] = serverProp{
+				k,
+				createServerDataSchema(&v),
+			}
+			i++
+		}
+
+		return serverDataSchema{
+			Type:       ds.DataType,
+			Properties: props,
+		}
+	}
+
+}
+
+func fillBuilder(reader io.Reader, ip string, port int) (*builder, error) {
+	parser := proto.NewParser(reader)
+	definition, err := parser.Parse()
+	if err != nil {
+		return nil, err
+	}
+
+	// Read the Messages and produce DataSchemes
+	dsb, err := generateDataSchemas(definition)
+	if err != nil {
+		return nil, err
+	}
+
+	// initialize the TD builder with an empty TD and DataSchema
+	b := newBuilder(ip, port, dsb)
+
+	// translate the RPC functions into Interaction Affordances
+	proto.Walk(definition,
+		proto.WithService(b.HandleService))
+
+	b.iab, err = generateInteractionAffordances(definition, dsb)
+
+	if b.iab == nil {
+		return b, err
+	}
+	return b, nil
 }

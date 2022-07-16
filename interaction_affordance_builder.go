@@ -29,16 +29,16 @@ type affClasses struct {
 }
 
 type combinedProperties struct {
-	name     string
-	getProp  affs
-	setProp  affs
-	category int // 0: read only; 1: write only; 2: readwrite
+	Name     string
+	GetProp  affs
+	SetProp  affs
+	Category int // 0: read only; 1: write only; 2: readwrite
 }
 
 type affs struct {
-	name string
-	req  *wot.DataSchema
-	res  *wot.DataSchema
+	Name string
+	Req  *wot.DataSchema
+	Res  *wot.DataSchema
 }
 
 func newInteractionAffordanceBuilder(dsb *dataSchemaBuilder) *interactionAffordanceBuilder {
@@ -68,7 +68,7 @@ func (b *interactionAffordanceBuilder) conformRPCs() error {
 	b.affs = map[string]affs{}
 	for _, v := range b.rpcs {
 		if _, found := b.affs[v.Name]; found {
-			return errors.New("Duplicate RPC name found in proto file for RPC name " + v.Name)
+			return errors.New("Duplicate RPC name found in proto file for RPC Name " + v.Name)
 		}
 		req, found := b.dsb.ds[v.RequestType]
 		if !found {
@@ -100,18 +100,18 @@ func (b *interactionAffordanceBuilder) groupProperties() {
 }
 
 func (b *interactionAffordanceBuilder) checkPropertyCombination(p affs, s1, s2 string, isGet bool, empty affs) {
-	pName := strings.ToUpper(p.name)
+	pName := strings.ToUpper(p.Name)
 	if strings.HasPrefix(pName, s1) {
-		propName := p.name[3:]
+		propName := p.Name[3:]
 		var cand affs
 
 		for k, v := range b.affC.prop {
 			if v == empty {
 				continue
 			}
-			if strings.HasPrefix(strings.ToUpper(v.name), s2) && v.name[3:] == propName {
-				if (isGet && v.req == p.res) ||
-					(!isGet && v.res == p.req) {
+			if strings.HasPrefix(strings.ToUpper(v.Name), s2) && v.Name[3:] == propName {
+				if (isGet && v.Req == p.Res) ||
+					(!isGet && v.Res == p.Req) {
 					cand = v
 					b.affC.prop[k] = empty
 					break
@@ -128,17 +128,17 @@ func (b *interactionAffordanceBuilder) checkPropertyCombination(p affs, s1, s2 s
 		}
 		if isGet {
 			b.affC.combinedProp = append(b.affC.combinedProp, combinedProperties{
-				name:     propName,
-				getProp:  p,
-				setProp:  cand,
-				category: getPropertyCategory(p.name, cand.name),
+				Name:     propName,
+				GetProp:  p,
+				SetProp:  cand,
+				Category: getPropertyCategory(p.Name, cand.Name),
 			})
 		} else {
 			b.affC.combinedProp = append(b.affC.combinedProp, combinedProperties{
-				name:     propName,
-				getProp:  cand,
-				setProp:  p,
-				category: getPropertyCategory(cand.name, p.name),
+				Name:     propName,
+				GetProp:  cand,
+				SetProp:  p,
+				Category: getPropertyCategory(cand.Name, p.Name),
 			})
 		}
 	}
@@ -162,19 +162,19 @@ func defaultConfig(_ affs) bool {
 }
 
 func startsWithGetCaseInsensitive(a affs) bool {
-	return strings.HasPrefix(strings.ToUpper(a.name), "GET")
+	return strings.HasPrefix(strings.ToUpper(a.Name), "GET")
 }
 
 func startsWithSetCaseInsensitive(a affs) bool {
-	return strings.HasPrefix(strings.ToUpper(a.name), "SET")
+	return strings.HasPrefix(strings.ToUpper(a.Name), "SET")
 }
 
 func startsWithGet(a affs) bool {
-	return strings.HasPrefix(a.name, "Get")
+	return strings.HasPrefix(a.Name, "Get")
 }
 
 func startsWithSet(a affs) bool {
-	return strings.HasPrefix(a.name, "Set")
+	return strings.HasPrefix(a.Name, "Set")
 }
 
 func typeNotEmpty(t *wot.DataSchema) bool {
@@ -184,11 +184,11 @@ func typeNotEmpty(t *wot.DataSchema) bool {
 }
 
 func hasReturnType(a affs) bool {
-	return typeNotEmpty(a.res)
+	return typeNotEmpty(a.Res)
 }
 
 func hasRequestType(a affs) bool {
-	return typeNotEmpty(a.req)
+	return typeNotEmpty(a.Req)
 }
 
 func and(condition checkCondition, condition2 checkCondition) checkCondition {

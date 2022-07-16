@@ -1,0 +1,72 @@
+<p *ngIf="actAffordance == null">
+  Here you will see the details if you select an affordance
+</p>
+<div *ngIf="actAffordance != null">
+  <div class="row">
+    <div class="col-md-8" style="border-right: 1px dashed black">
+      <h4 style="text-align: center;">{{getActAffordance().Name}}</h4>
+      <div class="row">
+        <div class="col-md-6">
+          <h6 style="text-align: center;">Request</h6>
+          <app-data-schema [ds]="getActAffordance().Req"></app-data-schema>
+        </div>
+        <div class="col-md-6">
+          <h6 style="text-align: center;">Response</h6>
+          <app-data-schema [ds]="getActAffordance().Res"></app-data-schema>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <h5 style="text-align: center;">Operations</h5>
+      <p>
+        <button class="btn btn-secondary"
+                *ngIf="actAffordance.type !== affordanceType.PROPERTY_GET && actAffordance.type !== affordanceType.PROPERTY_SET"
+                (click)="selectProperty=!selectProperty">Move to Property
+        </button>
+      </p>
+      <div *ngIf="selectProperty">
+        <hr>
+        <div>
+          <input type="radio" class="btn-check" id="get" value="get" name="getOrSet" [(ngModel)]="radioSelected"
+                 checked>
+          <label class="btn btn-outline-secondary" for="get">Add as Getter</label>
+          |
+          <input type="radio" class="btn-check" id="set" value="set" name="getOrSet" [(ngModel)]="radioSelected">
+          <label class="btn btn-outline-secondary" for="set">Add as Setter</label>
+          <!--<button class="btn btn-outline-secondary" (click)="moveToNewProperty(true)">New Property as Getter</button>
+          <button class="btn btn-outline-secondary" (click)="moveToNewProperty(false)">New Property as Setter</button>-->
+        </div>
+        <hr>
+        <button class="btn btn-secondary" (click)="moveToNewProperty()">Add as New Property</button>
+        |
+        <div class="btn-group dropup">
+          <button type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown"
+                  aria-expanded="false">
+            Add to existing Property
+          </button>
+          <ul class="dropdown-menu">
+            <li *ngFor="let property of getProperties(); let indexOfElement = index;">
+              <a class="dropdown-item" style="cursor: pointer"
+                 (click)="moveToExistingProperty({id: indexOfElement, property: property})">
+                {{property.Name}}
+              </a>
+            </li>
+          </ul>
+        </div>
+        <!--<button class="btn btn-outline-secondary">Combine with Existing</button>-->
+      </div>
+      <p>
+        <button class="btn btn-secondary"
+                *ngIf="actAffordance.type !== affordanceType.ACTION"
+                (click)="moveToAction()">Move to Action
+        </button>
+      </p>
+      <p>
+        <button class="btn btn-secondary"
+                *ngIf="actAffordance.type !== affordanceType.EVENT"
+                (click)="moveToEvent()">Move to Event
+        </button>
+      </p>
+    </div>
+  </div>
+</div>

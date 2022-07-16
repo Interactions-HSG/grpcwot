@@ -1,0 +1,23 @@
+<div class="row">
+  <div class="col-md-1"></div>
+  <div class="col-md-10" style = "border-radius: 10px; border: solid grey;">
+    <h5>{{getProperty().Name}}</h5>
+    <div class="row" *ngIf="getProperty().Category != 1">
+      <div class="col-md-12">
+        <b>GetProperty:</b>
+        <app-affordance
+          [affordance]="{id: property.id, affordance: getProperty().GetProp, type: affordanceType.PROPERTY_GET}"
+        ></app-affordance>
+      </div>
+    </div>
+    <div class="row" *ngIf="getProperty().Category != 0">
+      <div class="col-md-12">
+        <b>SetProperty:</b>
+        <app-affordance
+          [affordance]="{id: property.id, affordance: getProperty().SetProp, type: affordanceType.PROPERTY_SET}"
+        ></app-affordance>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-1"></div>
+</div>

@@ -222,6 +222,39 @@ func (b *interactionAffordanceBuilder) categorizeRPCs() {
 	}
 }
 
+// HandleRPCWithConfig classifies RPC functions to interaction affordances based on a provided configuration
+func (b *interactionAffordanceBuilder) categorizeRPCsWithConfig(ac map[string]affClassConfig) error {
+	processed := make([]string, len(ac))
+	i := 0
+	for _, v := range b.affs {
+		c, ok := ac[v.Name]
+		if !ok {
+			return errors.New("Could not find pre configured classification for RPC " + v.Name)
+		}
+		processed[i] = v.Name
+		i++
+
+		switch c.AffClass {
+		case "property":
+			b.affC.prop = append(b.affC.prop, v)
+		case "action":
+			b.affC.event = append(b.affC.event, v)
+		case "event":
+			b.affC.action = append(b.affC.action, v)
+		default:
+			return errors.New("Defined AffClass which is not possible " + c.AffClass)
+		}
+	}
+	if i != len(ac)-1 {
+		m := "Processed not all configs. Only the following RPCs were in the proto: "
+		for _, e := range processed {
+			m = m + e + ", "
+		}
+		return errors.New(m)
+	}
+	return nil
+}
+
 func generateInteractionAffordances(protoFile *proto.Proto, dsb *dataSchemaBuilder) (*interactionAffordanceBuilder, error) {
 	b := newInteractionAffordanceBuilder(dsb)
 
@@ -237,5 +270,18 @@ func generateInteractionAffordances(protoFile *proto.Proto, dsb *dataSchemaBuild
 
 	b.groupProperties()
 
+	return b, nil
+}
+
+func generateInteractionAffordancesWithConfig(protoFile *proto.Proto, dsb *dataSchemaBuilder, ac map[string]affClassConfig) (*interactionAffordanceBuilder, error) {
+	b := newInteractionAffordanceBuilder(dsb)
+
+	proto.Walk(protoFile,
+		proto.WithRPC(b.HandleRPC))
+
+	err := b.categorizeRPCsWithConfig(ac)
+	if err != nil {
+		return nil, err
+	}
 	return b, nil
 }

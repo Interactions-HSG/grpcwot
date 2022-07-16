@@ -3,8 +3,10 @@ package grpcwot
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"strings"
 
@@ -13,12 +15,13 @@ import (
 )
 
 type builder struct {
-	td   wot.ThingDescription
-	dsb  *dataSchemaBuilder
-	iab  *interactionAffordanceBuilder
-	ip   string
-	port int
-	ac   map[string]affClassConfig
+	td          wot.ThingDescription
+	dsb         *dataSchemaBuilder
+	iab         *interactionAffordanceBuilder
+	ip          string
+	port        int
+	ac          map[string]affClassConfig
+	handleError error
 }
 
 type affClassConfig struct {
@@ -61,7 +64,7 @@ func (b *builder) getForms(n string, ops []string) []wot.Form {
 	}
 }
 
-// saveToAffClass is a helper function to save affordances in the affordance classification so they could be
+// saveToAffClass is a helper function to save affordances in the affordance classification, so they could be
 // transformed into json and be reused for further builds
 func (b *builder) saveToAffClass(k, n, affClass string) {
 	if k == n {
@@ -242,6 +245,20 @@ func (b *builder) categorizeAffordances() {
 	}
 }
 
+// Generates a json file to store the configurations made by classification process
+func (b *builder) generateConfigFileForAffordanceClassification(configFile string) {
+	configBytes, _ := json.Marshal(b.ac)
+	f, err := os.Create(configFile)
+	if err != nil {
+		return
+	}
+	defer f.Close()
+	_, err = f.Write(configBytes)
+	if err != nil {
+		return
+	}
+}
+
 // saveAfterConfigRPC Saves the affordances to the TD with the classification derived from the vonfig
 func (b *builder) saveAfterConfigRPC() {
 	for _, v := range b.iab.affC.combinedProp {
@@ -266,20 +283,26 @@ func contains(a []string, s string) bool {
 }
 
 // GenerateTDfromProtoBuf parses `protoFile` to generate `tdFile`
-func GenerateTDfromProtoBuf(protoFile, tdFile, ip string, port int) error { // parse the protoFile with the emicklei/proto
+func GenerateTDfromProtoBuf(protoFile, outputDir, classConfigFile, ip string, port int) error { // parse the protoFile with the emicklei/proto
+	configSet := true
+	// Check if config File is present
+	if _, err := os.Stat(classConfigFile); errors.Is(err, os.ErrNotExist) {
+		configSet = false
+	}
+
 	reader, _ := os.Open(protoFile)
 	defer reader.Close()
 
-	b, err := fillBuilder(reader, ip, port)
+	b, err := fillBuilder(reader, ip, port, configSet, false, classConfigFile)
 	if err != nil {
 		return err
 	}
 
-	b.categorizeAffordances()
+	b.generateConfigFileForAffordanceClassification(outputDir + "/classificationConfig.json")
 
 	// serialize the TD to JSONLD
 	tdBytes, _ := json.Marshal(b.td)
-	f, err := os.Create(tdFile)
+	f, err := os.Create(outputDir + "/td.jsonld")
 	if err != nil {
 		return err
 	}
@@ -321,7 +344,7 @@ type serverProp struct {
 }
 
 func GetProtoBufInformation(protofile io.Reader) ([]byte, error) {
-	b, err := fillBuilder(protofile, "", 0)
+	b, err := fillBuilder(protofile, "", 0, false, true, "")
 	if err != nil {
 		return []byte{}, err
 	}
@@ -361,12 +384,6 @@ func GetProtoBufInformation(protofile io.Reader) ([]byte, error) {
 		})
 	}
 
-	/*res := parsedResult{
-		b.iab.affC.combinedProp,
-		b.iab.affC.action,
-		b.iab.affC.event,
-	}*/
-
 	result, err := json.Marshal(res2)
 	if err != nil {
 		return []byte{}, err
@@ -393,7 +410,6 @@ func createServerDataSchema(ds *wot.DataSchema) serverDataSchema {
 			}
 			i++
 		}
-
 		return serverDataSchema{
 			Type:       ds.DataType,
 			Properties: props,
@@ -402,7 +418,7 @@ func createServerDataSchema(ds *wot.DataSchema) serverDataSchema {
 
 }
 
-func fillBuilder(reader io.Reader, ip string, port int) (*builder, error) {
+func fillBuilder(reader io.Reader, ip string, port int, configSet, isServer bool, classConfigFile string) (*builder, error) {
 	parser := proto.NewParser(reader)
 	definition, err := parser.Parse()
 	if err != nil {
@@ -422,10 +438,43 @@ func fillBuilder(reader io.Reader, ip string, port int) (*builder, error) {
 	proto.Walk(definition,
 		proto.WithService(b.HandleService))
 
-	b.iab, err = generateInteractionAffordances(definition, dsb)
+	if configSet {
+		byteValue, err := readByteValueFromJsonFile(classConfigFile)
+		if err != nil {
+			return nil, err
+		}
+		err = json.Unmarshal(byteValue, &b.ac)
+		if err != nil {
+			return nil, err
+		}
+
+		// Apply predefined configuration and classify affordances according to that
+		b.iab, err = generateInteractionAffordancesWithConfig(definition, dsb, b.ac)
+
+		// Save affordances to the TD
+		b.saveAfterConfigRPC()
+	} else {
+		b.iab, err = generateInteractionAffordances(definition, dsb)
+		if !isServer {
+			b.categorizeAffordances()
+		}
+	}
 
 	if b.iab == nil {
 		return b, err
 	}
 	return b, nil
+}
+
+// readByteValueFromJsonFile reads in a json file into byteValue
+func readByteValueFromJsonFile(file string) ([]byte, error) {
+	jsonFile, err := os.Open(file)
+	if err != nil {
+		return nil, err
+	}
+	defer func(jsonFile *os.File) {
+		jsonFile.Close()
+	}(jsonFile)
+
+	return ioutil.ReadAll(jsonFile)
 }

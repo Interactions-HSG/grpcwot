@@ -1,0 +1,13 @@
+<div *ngIf="ds.Properties == null || ds.Properties.length == 0">
+  []
+</div>
+<div *ngIf="ds.Properties != null && ds.Properties.length > 0">
+  - type: {{ds.Type}}<br>
+  - properties:
+  <div *ngFor = "let property of ds.Properties">
+    [<br>
+    <app-data-schema-detail [property]="property"></app-data-schema-detail><br>
+    ]<br>
+  </div>
+</div>
+

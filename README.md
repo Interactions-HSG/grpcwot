@@ -10,6 +10,8 @@ This project contains a support tool for adapting gRPC communications in the W3C
 
 See [cmd/protod](/Interactions-HSG/grpc-wot/blob/main/cmd/prototd) for the command line tool to translate a gRPC service to a Web Thing.
 
+See [server](/Interactions-HSG/grpc-wot/blob/main/server) for the server allowing to connect a frontend to the application 
+
 ## Synopsis
 
 ### Install

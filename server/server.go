@@ -31,8 +31,6 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	fmt.Println("successful")
-	fmt.Println(res)
 }
 
 func setupResponse(w *http.ResponseWriter, _ *http.Request) {

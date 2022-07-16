@@ -36,8 +36,8 @@ var conformRPCTest = []struct {
 		},
 		map[string]affs{
 			"TestRPC1": {
-				req: inMessages[0]["TestM1"],
-				res: inMessages[0]["TestM2"],
+				Req: inMessages[0]["TestM1"],
+				Res: inMessages[0]["TestM2"],
 			},
 		},
 		nil,
@@ -53,8 +53,8 @@ var conformRPCTest = []struct {
 		},
 		map[string]affs{
 			"TestRPC2": {
-				req: inMessages[1]["TestM1.TestIM1"],
-				res: inMessages[1]["TestM2"],
+				Req: inMessages[1]["TestM1.TestIM1"],
+				Res: inMessages[1]["TestM2"],
 			},
 		},
 		nil,
@@ -75,12 +75,12 @@ var conformRPCTest = []struct {
 		},
 		map[string]affs{
 			"TestRPC3": {
-				req: inMessages[0]["TestM1"],
-				res: inMessages[0]["TestM2"],
+				Req: inMessages[0]["TestM1"],
+				Res: inMessages[0]["TestM2"],
 			},
 			"TestRPC4": {
-				req: inMessages[0]["TestM2"],
-				res: inMessages[0]["TestM1"],
+				Req: inMessages[0]["TestM2"],
+				Res: inMessages[0]["TestM1"],
 			},
 		},
 		nil,
@@ -102,7 +102,7 @@ var conformRPCTest = []struct {
 			},
 		},
 		map[string]affs{},
-		errors.New("Duplicate RPC name found in proto file for RPC name TestRPCError1"),
+		errors.New("Duplicate RPC name found in proto file for RPC Name TestRPCError1"),
 	},
 	{
 		map[string]*wot.DataSchema{
@@ -152,11 +152,11 @@ func TestConformRPC(t *testing.T) {
 			}
 		} else {
 			for k, v := range v.out {
-				if iab.affs[k].req != v.req {
-					t.Errorf("Expected the request type %v,\n but got %v\n for RPC %v", v.req, iab.affs[k].req, k)
+				if iab.affs[k].Req != v.Req {
+					t.Errorf("Expected the request type %v,\n but got %v\n for RPC %v", v.Req, iab.affs[k].Req, k)
 				}
-				if iab.affs[k].res != v.res {
-					t.Errorf("Expected the return type %v,\n but got %v\n for RPC %v", v.res, iab.affs[k].res, k)
+				if iab.affs[k].Res != v.Res {
+					t.Errorf("Expected the return type %v,\n but got %v\n for RPC %v", v.Res, iab.affs[k].Res, k)
 				}
 			}
 		}
@@ -165,29 +165,29 @@ func TestConformRPC(t *testing.T) {
 
 var categorizeRPCTestAffordances = map[string]affs{
 	"SimpleTest": {
-		name: "SimpleTest",
-		req:  &wot.DataSchema{},
-		res:  &wot.DataSchema{},
+		Name: "SimpleTest",
+		Req:  &wot.DataSchema{},
+		Res:  &wot.DataSchema{},
 	},
 	"GetTest": {
-		name: "GetTest",
-		req:  &wot.DataSchema{},
-		res:  &wot.DataSchema{},
+		Name: "GetTest",
+		Req:  &wot.DataSchema{},
+		Res:  &wot.DataSchema{},
 	},
 	"GetTest2": {
-		name: "GetTest2",
-		req:  &wot.DataSchema{},
-		res:  &wot.DataSchema{},
+		Name: "GetTest2",
+		Req:  &wot.DataSchema{},
+		Res:  &wot.DataSchema{},
 	},
 	"SetTest": {
-		name: "SetTest",
-		req:  &wot.DataSchema{},
-		res:  &wot.DataSchema{},
+		Name: "SetTest",
+		Req:  &wot.DataSchema{},
+		Res:  &wot.DataSchema{},
 	},
 	"TestWithReturn": {
-		name: "TestWithReturn",
-		req:  &wot.DataSchema{},
-		res: &wot.DataSchema{
+		Name: "TestWithReturn",
+		Req:  &wot.DataSchema{},
+		Res: &wot.DataSchema{
 			DataType: "object",
 			ObjectSchema: &wot.ObjectSchema{
 				Properties: map[string]wot.DataSchema{
@@ -197,8 +197,8 @@ var categorizeRPCTestAffordances = map[string]affs{
 		},
 	},
 	"TestWithRequest": {
-		name: "TestWithRequest",
-		req: &wot.DataSchema{
+		Name: "TestWithRequest",
+		Req: &wot.DataSchema{
 			DataType: "object",
 			ObjectSchema: &wot.ObjectSchema{
 				Properties: map[string]wot.DataSchema{
@@ -206,11 +206,11 @@ var categorizeRPCTestAffordances = map[string]affs{
 				},
 			},
 		},
-		res: &wot.DataSchema{},
+		Res: &wot.DataSchema{},
 	},
 	"TestWithRequestAndReturn": {
-		name: "TestWithRequestAndReturn",
-		req: &wot.DataSchema{
+		Name: "TestWithRequestAndReturn",
+		Req: &wot.DataSchema{
 			DataType: "object",
 			ObjectSchema: &wot.ObjectSchema{
 				Properties: map[string]wot.DataSchema{
@@ -218,7 +218,7 @@ var categorizeRPCTestAffordances = map[string]affs{
 				},
 			},
 		},
-		res: &wot.DataSchema{
+		Res: &wot.DataSchema{
 			DataType: "object",
 			ObjectSchema: &wot.ObjectSchema{
 				Properties: map[string]wot.DataSchema{
@@ -365,28 +365,28 @@ var sameDataSets = map[string]*wot.DataSchema{
 
 var combinePropertiesTestAffordances = map[string]affs{
 	"GetTest1WithSameResAsSet": {
-		name: "GetTest1",
-		req:  &wot.DataSchema{},
-		res:  sameDataSets["DS1"],
+		Name: "GetTest1",
+		Req:  &wot.DataSchema{},
+		Res:  sameDataSets["DS1"],
 	},
 	"SetTest1WithSameReqAsGet": {
-		name: "SetTest1",
-		req:  sameDataSets["DS1"],
-		res:  &wot.DataSchema{},
+		Name: "SetTest1",
+		Req:  sameDataSets["DS1"],
+		Res:  &wot.DataSchema{},
 	},
 	"GetTest2WithDifferentResAsSet": {
-		name: "GetTest2",
-		req:  &wot.DataSchema{},
-		res:  sameDataSets["DS2"],
+		Name: "GetTest2",
+		Req:  &wot.DataSchema{},
+		Res:  sameDataSets["DS2"],
 	},
 	"SetTest2WithDifferentReqAsGet": {
-		name: "SetTest2",
-		req:  sameDataSets["DS3"],
-		res:  &wot.DataSchema{},
+		Name: "SetTest2",
+		Req:  sameDataSets["DS3"],
+		Res:  &wot.DataSchema{},
 	},
 	"GetTest3WithDifferentNameAndDifferentReqRes": {
-		name: "GetTest3Get",
-		req: &wot.DataSchema{
+		Name: "GetTest3Get",
+		Req: &wot.DataSchema{
 			DataType: "object",
 			ObjectSchema: &wot.ObjectSchema{
 				Properties: map[string]wot.DataSchema{
@@ -394,7 +394,7 @@ var combinePropertiesTestAffordances = map[string]affs{
 				},
 			},
 		},
-		res: &wot.DataSchema{
+		Res: &wot.DataSchema{
 			DataType: "object",
 			ObjectSchema: &wot.ObjectSchema{
 				Properties: map[string]wot.DataSchema{
@@ -404,8 +404,8 @@ var combinePropertiesTestAffordances = map[string]affs{
 		},
 	},
 	"SetTest3WithDifferentNameAndDifferentReqRes": {
-		name: "SetTest3Set",
-		req: &wot.DataSchema{
+		Name: "SetTest3Set",
+		Req: &wot.DataSchema{
 			DataType: "object",
 			ObjectSchema: &wot.ObjectSchema{
 				Properties: map[string]wot.DataSchema{
@@ -413,7 +413,7 @@ var combinePropertiesTestAffordances = map[string]affs{
 				},
 			},
 		},
-		res: &wot.DataSchema{
+		Res: &wot.DataSchema{
 			DataType: "object",
 			ObjectSchema: &wot.ObjectSchema{
 				Properties: map[string]wot.DataSchema{
@@ -440,10 +440,10 @@ var combinePropertiesTest = []struct {
 		affClasses{
 			combinedProp: []combinedProperties{
 				{
-					name:     "Test1",
-					getProp:  combinePropertiesTestAffordances["GetTest1WithSameResAsSet"],
-					setProp:  combinePropertiesTestAffordances["SetTest1WithSameReqAsGet"],
-					category: 2,
+					Name:     "Test1",
+					GetProp:  combinePropertiesTestAffordances["GetTest1WithSameResAsSet"],
+					SetProp:  combinePropertiesTestAffordances["SetTest1WithSameReqAsGet"],
+					Category: 2,
 				},
 			},
 		},
@@ -459,9 +459,9 @@ var combinePropertiesTest = []struct {
 		affClasses{
 			combinedProp: []combinedProperties{
 				{
-					name:     "Test1",
-					getProp:  combinePropertiesTestAffordances["GetTest1WithSameResAsSet"],
-					category: 0,
+					Name:     "Test1",
+					GetProp:  combinePropertiesTestAffordances["GetTest1WithSameResAsSet"],
+					Category: 0,
 				},
 			},
 		},
@@ -477,9 +477,9 @@ var combinePropertiesTest = []struct {
 		affClasses{
 			combinedProp: []combinedProperties{
 				{
-					name:     "Test1",
-					setProp:  combinePropertiesTestAffordances["SetTest1WithSameReqAsGet"],
-					category: 1,
+					Name:     "Test1",
+					SetProp:  combinePropertiesTestAffordances["SetTest1WithSameReqAsGet"],
+					Category: 1,
 				},
 			},
 		},
@@ -496,10 +496,10 @@ var combinePropertiesTest = []struct {
 		affClasses{
 			combinedProp: []combinedProperties{
 				{
-					name:     "Test1",
-					getProp:  combinePropertiesTestAffordances["GetTest1WithSameResAsSet"],
-					setProp:  combinePropertiesTestAffordances["SetTest1WithSameReqAsGet"],
-					category: 2,
+					Name:     "Test1",
+					GetProp:  combinePropertiesTestAffordances["GetTest1WithSameResAsSet"],
+					SetProp:  combinePropertiesTestAffordances["SetTest1WithSameReqAsGet"],
+					Category: 2,
 				},
 			},
 		},
@@ -516,9 +516,9 @@ var combinePropertiesTest = []struct {
 		affClasses{
 			combinedProp: []combinedProperties{
 				{
-					name:     "Test2",
-					getProp:  combinePropertiesTestAffordances["GetTest2WithDifferentResAsSet"],
-					category: 0,
+					Name:     "Test2",
+					GetProp:  combinePropertiesTestAffordances["GetTest2WithDifferentResAsSet"],
+					Category: 0,
 				},
 			},
 			action: []affs{
@@ -538,14 +538,14 @@ var combinePropertiesTest = []struct {
 		affClasses{
 			combinedProp: []combinedProperties{
 				{
-					name:     "Test3Get",
-					getProp:  combinePropertiesTestAffordances["GetTest3WithDifferentNameAndDifferentReqRes"],
-					category: 0,
+					Name:     "Test3Get",
+					GetProp:  combinePropertiesTestAffordances["GetTest3WithDifferentNameAndDifferentReqRes"],
+					Category: 0,
 				},
 				{
-					name:     "Test3Set",
-					setProp:  combinePropertiesTestAffordances["SetTest3WithDifferentNameAndDifferentReqRes"],
-					category: 1,
+					Name:     "Test3Set",
+					SetProp:  combinePropertiesTestAffordances["SetTest3WithDifferentNameAndDifferentReqRes"],
+					Category: 1,
 				},
 			},
 		},
@@ -579,8 +579,8 @@ func equalsCombinedPropsSlice(e []combinedProperties, a []combinedProperties, t 
 }
 
 func equalsCombinedProps(a combinedProperties, b combinedProperties) bool {
-	return a.setProp == b.setProp &&
-		a.getProp == b.getProp &&
-		a.name == b.name &&
-		a.category == b.category
+	return a.SetProp == b.SetProp &&
+		a.GetProp == b.GetProp &&
+		a.Name == b.Name &&
+		a.Category == b.Category
 }

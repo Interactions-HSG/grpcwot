@@ -11,7 +11,7 @@ import (
 type refMesTuple struct {
 	pm string // Parent message where the field of type message is included
 	t  string // Type of the field == name of the referenced message
-	n  string // Name of the field
+	n  string // name of the field
 }
 
 type dataSchemaBuilder struct {
